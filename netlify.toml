@@ -1,0 +1,15 @@
+# Netlify configuration for the static learning simulation.
+# The app lives at the repository root, so no base directory is set.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22.22.2"  # the version the build and tests were run with; keep in sync with .nvmrc
+
+# Client-side routes (/cases, /case/01, /notebook …) must load index.html
+# on refresh. Real files in dist/ are served first because this rule is not forced.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

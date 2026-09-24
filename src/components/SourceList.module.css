@@ -1,0 +1,10 @@
+.line {
+  font-size: 0.875rem;
+  opacity: 0.85;
+  margin: 12px 0 0;
+}
+
+.line a {
+  color: inherit;
+  text-underline-offset: 3px;
+}

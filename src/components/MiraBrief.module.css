@@ -1,0 +1,34 @@
+.brief {
+  border-left: 3px solid var(--powder);
+  padding: 4px 0 4px 16px;
+  margin-bottom: 20px;
+}
+
+.speaker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--shell-muted);
+  margin-bottom: 6px;
+}
+
+.initial {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--powder);
+  color: var(--cover-navy);
+  font-family: var(--serif);
+}
+
+.quote {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.quote p:last-child {
+  margin-bottom: 0;
+}
