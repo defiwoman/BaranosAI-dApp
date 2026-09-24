@@ -36,9 +36,12 @@
   color: var(--logo-light);
   min-height: var(--tap);
   margin-right: auto;
+  min-width: 0;
+  flex: 1 1 240px;
 }
 
 .logo {
+  flex: none;
   width: 40px;
   height: 40px;
   border-radius: 6px;
@@ -48,12 +51,13 @@
 .brandText {
   display: flex;
   flex-direction: column;
-  line-height: 1.15;
+  line-height: 1.2;
+  min-width: 0;
 }
 
 .brandTitle {
   font-family: var(--serif);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .brandSub {
@@ -61,8 +65,17 @@
   color: var(--shell-muted);
 }
 
+/* On phones the subtitle is dropped from the header; the welcome screen shows it. */
+@media (max-width: 480px) {
+  .brandSub {
+    display: none;
+  }
+}
+
 .nav {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
 }
 
@@ -87,13 +100,27 @@
 }
 
 .mode {
-  font-size: 0.8rem;
+  font: inherit;
+  font-size: 0.75rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   border: 1px solid var(--powder);
+  background: transparent;
   color: var(--powder);
+  min-height: 32px;
   padding: 4px 10px;
   border-radius: 999px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.simNote {
+  margin: 0;
+  padding: 10px 16px;
+  background: rgba(191, 211, 246, 0.1);
+  color: var(--logo-light);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--shell-rule);
 }
 
 .notice {

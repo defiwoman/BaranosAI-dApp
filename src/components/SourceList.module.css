@@ -1,27 +1,10 @@
-.wrap {
-  margin-top: 12px;
-  font-size: 0.9rem;
+.line {
+  font-size: 0.875rem;
+  opacity: 0.85;
+  margin: 12px 0 0;
 }
 
-.label {
-  font-weight: 600;
-  margin: 0 0 4px;
-}
-
-.list {
-  margin: 0;
-  padding-left: 1.1em;
-}
-
-.list li {
-  margin-bottom: 4px;
-}
-
-.list a {
+.line a {
   color: inherit;
   text-underline-offset: 3px;
-}
-
-.meta {
-  opacity: 0.8;
 }

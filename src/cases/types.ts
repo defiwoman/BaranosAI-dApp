@@ -1,9 +1,8 @@
-import type { ReactNode } from 'react';
-
-export interface CaseProps {
-  /** Called once when the case is first resolved in this visit. */
-  onComplete: (result: { decisions: number; wrongDecisions: number }) => void;
-  alreadyCompleted: boolean;
-  /** The primary next step after resolution, e.g. a link to the next case. */
-  nextAction: ReactNode;
+export interface ChallengeProps {
+  /** Record a passed learning check. Only correct work calls this. */
+  onPass: (check: string) => void;
+  /** Checks this participant still needs for the case (empty when the case is complete). */
+  missing: string[];
+  /** True when the case was already complete before this visit (a replay). */
+  replay: boolean;
 }

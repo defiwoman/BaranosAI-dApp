@@ -2,28 +2,24 @@ import { SOURCES } from '../content/sources';
 import type { SourceRef } from '../content/types';
 import styles from './SourceList.module.css';
 
-export function SourceList({ refs, label = 'Sources' }: { refs: SourceRef[]; label?: string }) {
+/** An unobtrusive single line of source links. */
+export function SourceLine({ refs, label = 'Sources' }: { refs: SourceRef[]; label?: string }) {
   return (
-    <div className={styles.wrap}>
-      <p className={styles.label}>{label}</p>
-      <ul className={styles.list}>
-        {refs.map((ref) => {
-          const s = SOURCES[ref.id];
-          return (
-            <li key={`${ref.id}-${ref.locator ?? ''}`}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer">
-                [{s.id}] {s.title}
-                {ref.locator ? `, ${ref.locator}` : ''}
-                <span className="visually-hidden"> (opens in a new tab)</span>
-              </a>
-              <span className={styles.meta}>
-                {' '}
-                — {s.author}, {s.date}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    <p className={styles.line}>
+      {label}:{' '}
+      {refs.map((ref, i) => {
+        const s = SOURCES[ref.id];
+        return (
+          <span key={`${ref.id}-${ref.locator ?? ''}`}>
+            {i > 0 && ' · '}
+            <a href={s.url} target="_blank" rel="noopener noreferrer">
+              {s.title}
+              {ref.locator ? `, ${ref.locator}` : ''}
+              <span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
+          </span>
+        );
+      })}
+    </p>
   );
 }

@@ -1,0 +1,17 @@
+.note {
+  font-size: 0.9rem;
+  color: var(--shell-muted);
+  margin-bottom: 16px;
+}
+
+.note summary {
+  cursor: pointer;
+  display: list-item;
+  list-style-position: inside;
+  padding: 12px 0;
+  color: var(--powder);
+}
+
+.note p {
+  max-width: 40em;
+}

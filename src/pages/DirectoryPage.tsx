@@ -1,39 +1,32 @@
-import { CASES } from '../content/cases';
+import { CASES } from '../content/quest';
 import { useProgress } from '../progressContext';
-import { completedCases, rankFor } from '../domain/progress';
+import { isCompleted, isUnlocked, nextCase } from '../domain/progress';
 import { Link } from '../router';
-import { availability, AVAILABILITY_LABEL } from '../components/CaseStatus';
+import { QuestProgress } from '../components/QuestProgress';
 import styles from './DirectoryPage.module.css';
 
 export function DirectoryPage() {
   const { progress } = useProgress();
-  const done = completedCases(progress).length;
+  const next = nextCase(progress);
   return (
-    <div>
+    <div className={styles.page}>
       <h1 data-page-heading tabIndex={-1} className={styles.title}>
-        Case directory
+        The six cases
       </h1>
-      <p className={styles.meta}>
-        {done} of {CASES.length} complete · Rank: {rankFor(progress)}
-      </p>
+      <QuestProgress progress={progress} />
       <ol className={styles.list}>
-        {CASES.map((c) => {
-          const a = availability(progress, c);
-          const open = a === 'available' || a === 'complete';
+        {CASES.map((c, i) => {
+          const done = isCompleted(progress, c.id);
+          const open = done || isUnlocked(progress, c.id);
+          const status = done ? '✓ Completed' : c.id === next ? 'Up next' : open ? 'Open' : 'Unlocks after the earlier cases';
           return (
-            <li key={c.id} className={`${styles.card} ${a === 'preview' || a === 'locked' ? styles.muted : ''}`}>
-              <p className={`num ${styles.id}`}>Case {c.id}</p>
-              <h2 className={styles.caseTitle}>{open ? <Link to={`/case/${c.id}`}>{c.title}</Link> : c.title}</h2>
-              <p className={styles.event}>{c.storyEvent}</p>
-              <p>
-                <strong>Objective:</strong> {c.objective}
+            <li key={c.id} className={`${styles.card} ${open ? '' : styles.muted}`}>
+              <p className={`num ${styles.id}`}>
+                Case {i + 1} of {CASES.length}
               </p>
-              <p className={styles.status}>{AVAILABILITY_LABEL[a]}</p>
-              {a === 'complete' && (
-                <p className={styles.review}>
-                  <Link to={`/case/${c.id}`}>Replay case</Link> · <Link to={`/notebook#case-${c.id}`}>Review concept</Link>
-                </p>
-              )}
+              <h2 className={styles.caseTitle}>{open ? <Link to={`/case/${c.id}`}>{c.title}</Link> : c.title}</h2>
+              <p>{c.challenge}</p>
+              <p className={styles.status}>{status}</p>
             </li>
           );
         })}

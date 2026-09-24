@@ -1,0 +1,92 @@
+.panel {
+  color-scheme: light;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 20px 18px;
+  margin-top: 16px;
+}
+
+.panel a {
+  color: var(--ink);
+}
+
+.heading {
+  font-size: 1.4rem;
+  color: var(--success);
+}
+
+.heading:focus {
+  outline: none;
+}
+
+.heading:focus-visible {
+  outline: 3px solid var(--focus);
+}
+
+.panel h3 {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 18px 0 4px;
+}
+
+.mira {
+  border-left: 3px solid var(--powder);
+  padding-left: 12px;
+}
+
+.takeaway {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--ink);
+  border-radius: 6px;
+  padding: 2px 14px 4px;
+  margin: 18px 0;
+}
+
+.takeaway p {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+}
+
+.explore {
+  border-top: 1px solid var(--rule);
+  margin-top: 12px;
+}
+
+.explore summary {
+  cursor: pointer;
+  display: list-item;
+  padding: 12px 0;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.actions a,
+.actions button {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.actions > :first-child {
+  background: var(--ink);
+  color: var(--paper);
+}

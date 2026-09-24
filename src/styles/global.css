@@ -93,3 +93,33 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* Printing the certificate: a single page with only the certificate image. */
+.print-only-certificate {
+  display: none;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+    min-height: 0;
+  }
+
+  body > *:not(.print-only-certificate) {
+    display: none !important;
+  }
+
+  .print-only-certificate {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+}

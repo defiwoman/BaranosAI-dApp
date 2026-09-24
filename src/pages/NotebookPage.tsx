@@ -1,38 +1,26 @@
 import { useEffect, useState } from 'react';
-import { NOTEBOOK, NOTEBOOK_CATEGORIES } from '../content/notebook';
+import { NOTEBOOK } from '../content/quest';
 import { SOURCES } from '../content/sources';
+import type { NotebookCategory } from '../content/types';
 import { useProgress } from '../progressContext';
-import { SourceList } from '../components/SourceList';
+import { isCompleted } from '../domain/progress';
+import { SourceLine } from '../components/SourceList';
 import { Link } from '../router';
 import styles from './NotebookPage.module.css';
 
-/** Search appears once there are enough entries for it to help. */
-const SEARCH_THRESHOLD = 5;
+const CATEGORIES: NotebookCategory[] = ['Verification', 'Reproducibility', 'Settlement', 'Limitations'];
+const SEARCH_THRESHOLD = 4;
 
 export function NotebookPage() {
   const { progress } = useProgress();
   const [query, setQuery] = useState('');
-  const unlocked = NOTEBOOK.filter((e) => progress.notebook.includes(e.id));
-  const lockedCount = NOTEBOOK.length - unlocked.length;
+  const unlocked = NOTEBOOK.filter((e) => isCompleted(progress, e.caseId));
   const q = query.trim().toLowerCase();
-  const visible = q
-    ? unlocked.filter((e) => `${e.title} ${e.body} ${e.category}`.toLowerCase().includes(q))
-    : unlocked;
-  // The first entry of each case (in display order) carries the #case-NN anchor.
-  const firstOfCase = new Set<string>();
-  const seenCases = new Set<string>();
-  for (const e of NOTEBOOK_CATEGORIES.flatMap((cat) => visible.filter((x) => x.category === cat))) {
-    if (!seenCases.has(e.caseId)) {
-      seenCases.add(e.caseId);
-      firstOfCase.add(e.id);
-    }
-  }
+  const visible = q ? unlocked.filter((e) => `${e.title} ${e.summary} ${e.takeaway} ${e.category}`.toLowerCase().includes(q)) : unlocked;
 
-  // Links such as /notebook#case-02 jump to that case's first entry.
+  // Links such as /notebook#case-02 jump to that case's entry.
   useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
-    const el = document.getElementById(hash);
+    const el = document.getElementById(window.location.hash.slice(1));
     if (el) {
       el.scrollIntoView();
       el.focus();
@@ -44,30 +32,24 @@ export function NotebookPage() {
       <h1 data-page-heading tabIndex={-1} className={styles.title}>
         Notebook
       </h1>
-      <p className={styles.intro}>Entries unlock as you resolve cases. Each one links to its sources.</p>
+      <p className={styles.intro}>One short note for each case you solve, to look back on.</p>
 
       {unlocked.length >= SEARCH_THRESHOLD && (
         <div className={styles.search}>
           <label htmlFor="notebook-search">Search the notebook</label>
-          <input
-            id="notebook-search"
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. settlement, commitment"
-          />
+          <input id="notebook-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. settled, evidence" />
           <p aria-live="polite" className={styles.count}>
-            {q ? `${visible.length} of ${unlocked.length} entries match.` : ''}
+            {q ? `${visible.length} of ${unlocked.length} notes match.` : ''}
           </p>
         </div>
       )}
 
       {unlocked.length === 0 ? (
         <p className={styles.empty}>
-          No entries yet. <Link to="/case/01">Open the first case</Link> to start your notebook.
+          No notes yet. <Link to="/case/01">Open the first case</Link> to start your notebook.
         </p>
       ) : (
-        NOTEBOOK_CATEGORIES.map((cat) => {
+        CATEGORIES.map((cat) => {
           const entries = visible.filter((e) => e.category === cat);
           if (entries.length === 0) return null;
           return (
@@ -76,17 +58,13 @@ export function NotebookPage() {
                 {cat}
               </h2>
               {entries.map((e) => (
-                <article
-                  key={e.id}
-                  id={firstOfCase.has(e.id) ? `case-${e.caseId}` : undefined}
-                  tabIndex={firstOfCase.has(e.id) ? -1 : undefined}
-                  className={styles.entry}
-                >
+                <article key={e.caseId} id={`case-${e.caseId}`} tabIndex={-1} className={styles.entry}>
                   <h3>{e.title}</h3>
-                  <p>{e.body}</p>
-                  <SourceList refs={e.sources} />
+                  <p>{e.summary}</p>
+                  <p className={styles.takeaway}>{e.takeaway}</p>
+                  <SourceLine refs={e.sources} />
                   <p className={styles.meta}>
-                    From <Link to={`/case/${e.caseId}`}>Case {e.caseId}</Link> · Curriculum v{e.curriculumVersion}
+                    <Link to={`/case/${e.caseId}`}>Revisit Case {Number(e.caseId)}</Link>
                   </p>
                 </article>
               ))}
@@ -94,19 +72,19 @@ export function NotebookPage() {
           );
         })
       )}
-      {lockedCount > 0 && unlocked.length > 0 && (
+      {unlocked.length > 0 && unlocked.length < NOTEBOOK.length && (
         <p className={styles.locked}>
-          {lockedCount} more {lockedCount === 1 ? 'entry unlocks' : 'entries unlock'} as you play.
+          {NOTEBOOK.length - unlocked.length} more {NOTEBOOK.length - unlocked.length === 1 ? 'note unlocks' : 'notes unlock'} as you play.
         </p>
       )}
 
       <details className={styles.register}>
-        <summary>Source register and claim boundaries</summary>
+        <summary>All sources</summary>
         <ul>
           {Object.values(SOURCES).map((s) => (
             <li key={s.id}>
               <a href={s.url} target="_blank" rel="noopener noreferrer">
-                [{s.id}] {s.title}
+                {s.title}
                 <span className="visually-hidden"> (opens in a new tab)</span>
               </a>{' '}
               — {s.author}, {s.date}. <span className={styles.boundary}>{s.boundary}</span>

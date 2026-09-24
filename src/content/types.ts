@@ -1,6 +1,7 @@
 import type { CaseId } from '../domain/types';
+import type { Question } from '../domain/tasks';
 
-export type SourceId = 'B1' | 'B2' | 'B3' | 'R1' | 'R2' | 'D1' | 'F1' | 'F2';
+export type SourceId = 'B1' | 'B2' | 'B3' | 'B4' | 'R1' | 'R2' | 'D1' | 'F1' | 'F2';
 
 export interface SourceRef {
   id: SourceId;
@@ -18,59 +19,56 @@ export interface Source {
   boundary: string;
 }
 
-export type NotebookCategory =
-  | 'Model'
-  | 'Evidence'
-  | 'Execution rules'
-  | 'Commitments'
-  | 'Challenges'
-  | 'Settlement'
-  | 'Limitations';
-
-export interface NotebookEntry {
-  id: string;
-  caseId: CaseId;
-  category: NotebookCategory;
-  title: string;
-  body: string;
-  sources: SourceRef[];
-  curriculumVersion: string;
+export interface Term {
+  term: string;
+  meaning: string;
 }
 
 export interface CaseSummary {
   id: CaseId;
   title: string;
-  storyEvent: string;
-  objective: string;
-  /** Short name of the concept, used in the completion card. */
+  /** One line shown in the directory. */
+  challenge: string;
+  /** Short concept name used on the summary page. */
   concept: string;
-  playable: boolean;
 }
 
-export interface TechnicalNote {
-  title: string;
+export interface Lesson {
+  /** Visible after the challenge is solved. */
+  why: string;
+  how: string;
+  takeaway: string;
+}
+
+export interface Explore {
   paragraphs: string[];
   sources: SourceRef[];
 }
 
-export interface StageContent {
-  id: string;
-  heading: string;
-  mira?: string[];
-  task: import('../domain/tasks').Task;
+/** A simplified case: short scenario, one task, one challenge, then the lesson. */
+export interface QuestCase {
+  id: CaseId;
+  /** Mira's two or three sentences. */
+  scenario: string[];
+  task: string;
+  /** Explained where first used. */
+  terms: Term[];
+  /** Cases 02–06 use questions; Case 01 has its own interactive replay. */
+  questions: Question[];
+  lesson: Lesson;
+  explore: Explore;
+  sources: SourceRef[];
+  /** Mira's closing line after solving. */
+  outro?: string;
 }
 
-export interface StagedCaseContent {
-  id: CaseId;
-  job: string;
-  brief: string[];
-  stages: StageContent[];
-  resolution: {
-    verdict: { tone: 'upheld' | 'matches' | 'incomplete' | 'hold'; label: string };
-    consequence: string;
-    explanation: string[];
-  };
-  relation: TechnicalNote;
-  hook?: string;
-  notebook: NotebookEntry[];
+export type NotebookCategory = 'Verification' | 'Reproducibility' | 'Settlement' | 'Limitations';
+
+export interface NotebookEntry {
+  caseId: CaseId;
+  category: NotebookCategory;
+  title: string;
+  summary: string;
+  takeaway: string;
+  sources: SourceRef[];
 }

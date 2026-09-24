@@ -1,12 +1,15 @@
 import { useCallback, useState } from 'react';
-import { CASES, caseById } from '../content/cases';
+import { caseById, QUEST } from '../content/quest';
 import { CASE_IDS, isCaseId, type CaseId } from '../domain/types';
-import { isCompleted, nextCase } from '../domain/progress';
+import { isCompleted, isUnlocked, missingChecks, nextCase } from '../domain/progress';
 import { useProgress } from '../progressContext';
 import { Link } from '../router';
-import { CASE_ACHIEVEMENTS, CASE_COMPONENTS } from '../cases/registry';
-import { CASE_NOTEBOOK_IDS } from '../content/notebook';
-import { availability, AVAILABILITY_LABEL } from '../components/CaseStatus';
+import { MiraBrief } from '../components/MiraBrief';
+import { LessonPanel } from '../components/LessonPanel';
+import { QuestProgress } from '../components/QuestProgress';
+import { SimulationNote } from '../components/SimulationNote';
+import { Case01Challenge } from '../cases/Case01';
+import { QuestionSequence } from '../cases/QuestionSequence';
 import { NotFoundPage } from './NotFoundPage';
 import styles from './CasePage.module.css';
 
@@ -16,97 +19,76 @@ export function CasePage({ id }: { id: string }) {
 }
 
 function CaseView({ id }: { id: CaseId }) {
-  const { progress, complete } = useProgress();
+  const { progress, pass } = useProgress();
+  const lesson = QUEST[id];
   const summary = caseById(id);
-  const a = availability(progress, summary);
-  const Component = CASE_COMPONENTS[id];
-  // Whether the case was already complete when opened; stays fixed during this visit.
-  const [completedBefore] = useState(() => isCompleted(progress, id));
-
-  const onComplete = useCallback(
-    (r: { decisions: number; wrongDecisions: number }) =>
-      complete({
-        caseId: id,
-        decisions: r.decisions,
-        wrongDecisions: r.wrongDecisions,
-        notebook: CASE_NOTEBOOK_IDS[id],
-        achievements: [CASE_ACHIEVEMENTS[id]],
-      }),
-    [complete, id],
-  );
+  // Fixed for this visit: was the case already complete when opened?
+  const [replay] = useState(() => isCompleted(progress, id));
+  const [missing] = useState(() => missingChecks(progress, id));
+  const complete = isCompleted(progress, id);
+  const onPass = useCallback((check: string) => pass(check), [pass]);
 
   const index = CASE_IDS.indexOf(id);
-  const following = CASES[index + 1];
-  const nextAction = following ? (
-    <Link to={following.playable ? `/case/${following.id}` : '/cases'}>
-      {following.playable ? `Open Case ${following.id}` : `Case ${following.id} preview`}
-    </Link>
-  ) : (
-    <Link to="/summary">See your case summary</Link>
-  );
+  const following = CASE_IDS[index + 1];
 
   return (
     <div className={styles.page}>
-      <nav aria-label="Cases" className={styles.caseNav}>
-        <ol>
-          {CASES.map((c) => {
-            const ca = availability(progress, c);
-            const current = c.id === id;
-            return (
-              <li key={c.id}>
-                <Link to={`/case/${c.id}`} aria-current={current ? 'page' : undefined} className={styles.navItem}>
-                  <span className="num">{c.id}</span>
-                  <span className={styles.navTitle}>{c.title}</span>
-                  <span className="visually-hidden">, {AVAILABILITY_LABEL[ca]}</span>
-                  {ca === 'complete' && (
-                    <span aria-hidden="true" className={styles.check}>
-                      ✓
-                    </span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+      <QuestProgress progress={progress} current={id} />
+      <h1 data-page-heading tabIndex={-1} className={styles.title}>
+        {summary.title}
+      </h1>
+      <SimulationNote />
 
-      <div className={styles.content}>
-        <header className={styles.header}>
-          <p className={`num ${styles.kicker}`}>
-            Case {id} <span className={styles.sim}>· Learning simulation</span>
-          </p>
-          <h1 data-page-heading tabIndex={-1} className={styles.title}>
-            {summary.title}
-          </h1>
-          <p className={styles.objective}>{summary.objective}</p>
-        </header>
+      {!isUnlocked(progress, id) ? (
+        <Locked />
+      ) : (
+        <>
+          <MiraBrief caseLabel={`Case ${id}`} lines={lesson.scenario} />
+          <section className={styles.task} aria-labelledby="task-heading">
+            <h2 id="task-heading" className={styles.taskHeading}>
+              Your task
+            </h2>
+            <p className={styles.taskText}>{lesson.task}</p>
+            {lesson.terms.length > 0 && (
+              <dl className={styles.terms} aria-label="New words">
+                {lesson.terms.map((t) => (
+                  <div key={t.term}>
+                    <dt>{t.term}</dt>
+                    <dd>{t.meaning}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
 
-        {a === 'preview' || !Component ? (
-          <Preview id={id} />
-        ) : a === 'locked' ? (
-          <Locked />
-        ) : (
-          <Component
-            key={id}
-            onComplete={onComplete}
-            alreadyCompleted={completedBefore}
-            nextAction={nextAction}
-          />
-        )}
-      </div>
+          {id === '01' ? (
+            <Case01Challenge onPass={onPass} missing={missing} replay={replay} />
+          ) : (
+            <QuestionSequence questions={lesson.questions} onPass={onPass} missing={missing} replay={replay} />
+          )}
+
+          {complete && (
+            <LessonPanel
+              lesson={lesson}
+              focusOnMount={!replay}
+              actions={
+                following ? (
+                  <>
+                    <Link to={`/case/${following}`}>Next case</Link>
+                    <Link to="/cases">All cases</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/certificate">See my certificate</Link>
+                    <Link to="/cases">All cases</Link>
+                  </>
+                )
+              }
+            />
+          )}
+        </>
+      )}
     </div>
-  );
-}
-
-function Preview({ id }: { id: CaseId }) {
-  const c = caseById(id);
-  return (
-    <section className={styles.notice}>
-      <h2>Preview</h2>
-      <p>{c.storyEvent}</p>
-      <p>This case is still being written and is not playable yet.</p>
-      <Link to="/cases">Back to the case directory</Link>
-    </section>
   );
 }
 
@@ -114,10 +96,14 @@ function Locked() {
   const { progress } = useProgress();
   const next = nextCase(progress);
   return (
-    <section className={styles.notice}>
-      <h2>Case locked</h2>
-      <p>Each case builds on the one before it. Complete the earlier cases to open this file.</p>
-      {next && <Link to={`/case/${next}`}>Go to Case {next}</Link>}
+    <section className={styles.locked}>
+      <h2>This case unlocks later</h2>
+      <p>Each case builds on the one before it. Finish the earlier cases first.</p>
+      {next && (
+        <Link to={`/case/${next}`} className={styles.button}>
+          Go to Case {Number(next)}
+        </Link>
+      )}
     </section>
   );
 }

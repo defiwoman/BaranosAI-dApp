@@ -1,0 +1,38 @@
+.wrap {
+  margin-bottom: 16px;
+}
+
+.text {
+  margin: 0 0 6px;
+  color: var(--powder);
+  font-size: 0.95rem;
+}
+
+.text strong {
+  color: var(--logo-light);
+}
+
+.bar {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  max-width: 360px;
+}
+
+.bar li {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(191, 211, 246, 0.2);
+}
+
+.bar li.done {
+  background: var(--powder);
+}
+
+.bar li.current {
+  outline: 2px solid var(--logo-light);
+  outline-offset: 1px;
+}

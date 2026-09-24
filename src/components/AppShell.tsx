@@ -1,18 +1,19 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useRouter } from '../router';
 import { useProgress } from '../progressContext';
-import { simulationAdapter } from '../adapters/simulation';
+import { APP_NAME, APP_SUBTITLE, SIMULATION_NOTE } from '../content/brand';
 import styles from './AppShell.module.css';
 
 const NAV = [
   { to: '/cases', label: 'Cases' },
   { to: '/notebook', label: 'Notebook' },
-  { to: '/summary', label: 'Summary' },
+  { to: '/summary', label: 'Progress' },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { path } = useRouter();
   const { recovered, dismissRecovered } = useProgress();
+  const [simOpen, setSimOpen] = useState(false);
 
   return (
     <div className={styles.shell}>
@@ -20,11 +21,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className={styles.header}>
-        <Link to="/" className={styles.brand} aria-label="Baranos Lab home">
+        <Link to="/" className={styles.brand} aria-label={`${APP_NAME} home`}>
           <img src="/brand/baranos-logo.png" alt="" className={styles.logo} width={40} height={40} />
           <span className={styles.brandText}>
-            <span className={styles.brandTitle}>Baranos Lab</span>
-            <span className={styles.brandSub}>The Verification Files</span>
+            <span className={styles.brandTitle}>{APP_NAME}</span>
+            <span className={styles.brandSub}>{APP_SUBTITLE}</span>
           </span>
         </Link>
         <nav aria-label="Main" className={styles.nav}>
@@ -38,11 +39,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               {item.label}
             </Link>
           ))}
+          <button
+            type="button"
+            className={styles.mode}
+            aria-expanded={simOpen}
+            aria-controls="sim-note"
+            onClick={() => setSimOpen((o) => !o)}
+          >
+            Learning simulation
+          </button>
         </nav>
-        <span className={styles.mode} title="Every result in this app is computed locally from fictional fixtures.">
-          {simulationAdapter.label}
-        </span>
       </header>
+      {simOpen && (
+        <p id="sim-note" className={styles.simNote}>
+          {SIMULATION_NOTE}
+        </p>
+      )}
 
       {recovered && (
         <div className={styles.notice} role="status">
@@ -59,11 +71,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <footer className={styles.footer}>
         <p>
-          A community-built learning simulation for the Fogo community. Cases use fictional jobs and a toy arithmetic
-          model; nothing here submits a Baranos job or a blockchain transaction. Not an official Baranos product, and not
-          yet reviewed by the Baranos team.
+          {APP_NAME} is a community-built learning experience for the Fogo community. Cases use fictional examples and a
+          toy calculation; nothing here runs a BaranosAI job or a blockchain transaction. Not an official BaranosAI product,
+          and not yet reviewed by the BaranosAI team.
         </p>
-        <p>Progress is saved only in this browser.</p>
+        <p>Your name and progress are saved only in this browser.</p>
       </footer>
     </div>
   );

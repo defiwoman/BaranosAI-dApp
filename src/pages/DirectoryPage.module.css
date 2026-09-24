@@ -1,13 +1,14 @@
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
 .title {
   font-size: 2rem;
 }
 
 .title:focus {
   outline: none;
-}
-
-.meta {
-  color: var(--powder);
 }
 
 .list {
@@ -54,16 +55,6 @@
   align-items: center;
 }
 
-.event {
-  color: var(--ink-2);
-}
-
 .status {
   font-weight: 600;
-}
-
-.review a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap);
 }

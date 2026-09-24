@@ -1,13 +1,25 @@
-# Baranos Lab: The Verification Files
+# BaranosAI Educational Quest
 
-A community-built learning simulation for the Fogo community. Players review fictional AI jobs for a demonstration app called Harbor and learn how an application can check an agreed computation, challenge incorrect execution and decide when it may use a result.
+*Six cases. Discover how verifiable AI works.*
 
-**What is simulated:** every case uses fictional jobs and a toy arithmetic model computed in the browser. Nothing in this release submits a Baranos job, connects a wallet or sends a blockchain transaction. Guest progress is stored only in the browser's `localStorage`.
+A community-built learning quest for the Fogo community. With Mira as their guide, participants solve six short investigative cases for a fictional app called Harbor. They finish knowing what BaranosAI does, why it matters, and what verification does not guarantee. Completing all six cases earns a personalised, community-issued certificate.
+
+Live review deployment: https://baranosaieducationalquest.netlify.app/
+
+**What is simulated:** every case uses fictional examples, and Case 01 uses a toy calculation, all computed in the browser. Nothing here submits a BaranosAI job, connects a wallet or sends a blockchain transaction.
+
+## How it works
+
+- **Entry form:** a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet.
+- **Six cases:** each has a short scenario, one task, one challenge with unlimited retries and an optional hint, then *Why this matters*, *How BaranosAI helps* and *Your takeaway*, plus an optional *Explore further* section and source links.
+- **Final review (Case 06):** three questions on reproducibility, settlement and the limits of verified results.
+- **Certificate:** unlocked only when all six cases are complete. A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. The certificate is drawn once on a canvas and offered as PNG, as a one-page PDF (the same image) and for printing. It is a browser-generated learning reward, not a tamper-proof credential.
+- **Saved data:** profile, progress and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, with schema version 2. Version 1 saves from the first release are migrated in place: completed cases keep their dates, and a finisher is asked only the one final-review question the old version did not include.
 
 ## Status
 
-- **Stage A** (first playable case) and **Stage B** (all six cases, notebook with search, review/replay, resumable progress, local share card) are implemented.
-- **Not implemented:** wallet connection and testnet completion records (Stage C) and live Baranos jobs (Stage D). Neither is simulated as if it were live.
+- The learning quest and certificate are implemented.
+- **Not implemented:** wallet connection and testnet completion records (Stage C in `docs/BUILD_SPEC.md`), and live BaranosAI jobs (Stage D). Neither is simulated as if it were live.
 
 ## Running locally
 
@@ -42,9 +54,9 @@ Hosting the frontend is separate from any future Fogo program deployment. A host
 
 | Path | Contents |
 | --- | --- |
-| `src/content/` | Case text, fixtures, notebook entries and the source register (no React) |
-| `src/domain/` | Pure functions: toy model, case state machines, progress schema |
-| `src/adapters/` | `simulation` execution adapter and browser storage |
+| `src/content/` | Lessons (`quest.ts`), branding and certificate wording (`brand.ts`), Case 01 fixtures and the source register (no React) |
+| `src/domain/` | Pure functions: toy model, Case 01 state machine, question grading, profile validation, progress schema and migration, certificate eligibility, PDF writer |
+| `src/adapters/` | `simulation` execution adapter, browser storage and certificate rendering |
 | `src/cases/` | One component per case |
 | `src/components/`, `src/pages/` | Shared UI and routed pages |
 | `public/brand/baranos-logo.png` | The supplied logo, unchanged |

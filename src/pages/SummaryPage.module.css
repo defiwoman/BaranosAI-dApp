@@ -1,5 +1,6 @@
 .page {
-  max-width: 880px;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 .title {
@@ -14,6 +15,17 @@
   color: var(--powder);
 }
 
+.meta a {
+  display: inline-flex;
+  min-height: var(--tap);
+  align-items: center;
+}
+
+.name {
+  color: var(--logo-light);
+  overflow-wrap: anywhere;
+}
+
 .panel {
   background: var(--paper);
   color: var(--ink);
@@ -26,6 +38,22 @@
   color: var(--ink);
 }
 
+.panel h2 {
+  font-size: 1.3rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper) !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .concepts {
   list-style: none;
   padding: 0;
@@ -33,58 +61,20 @@
 }
 
 .concepts li {
-  padding: 8px 0;
+  padding: 10px 0;
   border-top: 1px solid var(--rule);
 }
 
-.links {
+.concept {
   display: block;
+  color: var(--ink-2);
   font-size: 0.95rem;
 }
 
-.links a {
+.inline {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap);
-}
-
-.justified {
-  margin-top: 12px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 12px 0;
-}
-
-.actions button {
-  min-height: var(--tap);
-  padding: 0 18px;
-  border-radius: var(--radius);
-  border: 1px solid currentColor;
-  background: transparent;
-  color: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.panel .actions button:first-child {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-
-.canvas {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  display: block;
-}
-
-.hidden {
-  display: none;
 }
 
 .reset {
@@ -95,4 +85,22 @@
 .reset h2 {
   font-size: 1.1rem;
   color: var(--logo-light);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions button {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--powder);
+  background: transparent;
+  color: var(--logo-light);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }

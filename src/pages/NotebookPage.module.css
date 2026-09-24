@@ -1,5 +1,6 @@
 .page {
   max-width: 820px;
+  margin: 0 auto;
 }
 
 .title {
@@ -105,4 +106,17 @@
 
 .boundary {
   color: var(--shell-muted);
+}
+
+.takeaway {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  border-left: 4px solid var(--ink);
+  padding-left: 10px;
+}
+
+.meta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
 }

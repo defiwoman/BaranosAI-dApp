@@ -1,7 +1,37 @@
+.challenge {
+  color-scheme: light;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+}
+
+.toy {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+.toyTag {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--ink-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-right: 4px;
+}
+
+.rule {
+  font-size: 1.05rem;
+}
+
 .practice {
   font-size: 0.9rem;
-  color: var(--shell-muted);
+  color: var(--ink-2);
 }
+
 
 .trace {
   border: 0;
@@ -100,30 +130,7 @@
   text-align: right;
 }
 
-.jobList,
-.facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 14px;
-  margin: 0;
-}
 
-.jobList dt,
-.facts dt {
-  color: var(--ink-2);
-}
 
-.facts dt {
-  color: var(--shell-muted);
-}
 
-.jobList dd,
-.facts dd {
-  margin: 0;
-}
 
-.mode {
-  margin-top: 14px;
-  font-size: 0.85rem;
-  color: var(--shell-muted);
-}

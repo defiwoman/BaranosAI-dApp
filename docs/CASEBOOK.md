@@ -2,7 +2,22 @@
 
 All incidents, characters, toy models, sample receipts and timings below are original fictional teaching material. They do not describe a Baranos incident, an actual deployed verifier or measured chain behavior.
 
-## Curriculum v1.0 changes (implemented)
+## Curriculum v2: BaranosAI Educational Quest (implemented)
+
+The app is now **BaranosAI Educational Quest**. Route IDs `01`–`06` are unchanged. Each case is a short scenario, one task, one challenge, then *Why this matters* / *How BaranosAI helps* / *Your takeaway*, with optional depth under *Explore further*. The lesson text lives in `src/content/quest.ts`.
+
+| Case | Title | Check(s) |
+| --- | --- | --- |
+| 01 | Can you check the answer? | Challenge and replay step 2 of the toy job (25 → 23) |
+| 02 | Are we checking the same task? | Pick the setup with a matching model, document fingerprint and settings |
+| 03 | Is the result ready? | Act only after settlement |
+| 04 | What if the evidence is wrong? | Correct execution with out-of-date evidence |
+| 05 | Instructions or evidence? | Find the injected instruction in a letter |
+| 06 | Your final investigation | Three questions: reproducibility, settlement, limits of verified results |
+
+The sections below describe curriculum v1 and remain as design history.
+
+## Curriculum v1.0 changes (implemented, superseded by v2)
 
 Central objective: players understand how an application can check an agreed AI computation, challenge incorrect execution and decide when it may use a result.
 

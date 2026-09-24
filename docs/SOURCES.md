@@ -12,6 +12,7 @@ Prepared 22 September 2026. This is a build specification and original education
 | F1 | https://docs.fogo.io/user-guides/building-on-fogo.html | SVM and Anchor development support; checked 22 September |
 | F2 | https://docs.fogo.io/user-guides/integrating-fogo-sessions.html | Session integration and permissioned onboarding requirements; checked 22 September |
 | C1 | https://code.claude.com/docs/en/web-quickstart | Browser workflow using a GitHub repository and a cloud development environment; checked 22 September |
+| B4 | https://www.baranos.ai/resources/ | Official resources index (introduction, explainer, overview, deck, whitepaper); linked from lessons |
 | N1 | https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/ | Suggested frontend deployment workflow; checked 22 September |
 | R1 | https://x.com/RobertSagurton/status/2102032754401501303 | Robert Sagurton (Fogo co-founder), 21 Sep 2026: enterprise-adoption narrative, presented in the game as a future thesis only |
 | R2 | https://x.com/RobertSagurton/status/2102364792631570570 | Robert Sagurton, 22 Sep 2026: follow-up, same boundary as R1 |
@@ -46,3 +47,20 @@ The game illustrates these ideas through original, simplified scenarios. Its thr
 - The app's completion record is issued by the learning application; it is not a Baranos inference receipt.
 
 The proposed visual tokens were sampled from the user's unchanged logo and the previously rendered whitepaper pages. No official color specification was supplied.
+
+### Quest rewrite (24 September 2026)
+
+`www.baranos.ai` (home, blog, /resources and the whitepaper PDF), `x.com` and the Netlify deployment were again blocked from the build environment. The lessons use only these points, confirmed through search-index excerpts of baranos.ai:
+
+- Each job fixes the model, evidence and execution rules; the model, evidence, runtime and execution policy are committed before the job runs, so independent participants can reproduce the computation and challenge the result.
+- BaranosAI uses open-weight models; a Merkle root commits to the weights while the weights remain offchain (Confirmation mode).
+- Confirmation mode: inference offchain, onchain verification and replay of disputed steps under the committed rules. Replay mode: execution onchain from the start.
+- Settled results become onchain state that applications can read.
+- Verification concerns conformity to the computation, not the truth of the conclusion (kit source notes, B2).
+
+**Still to check against the originals before public release:**
+
+1. The Case 03 *Explore further* figures attributed to Doug Colkitt (D1): Qwen3.5-4B, 30-token prompt, 52-token completion, about 300 s per decode token, about 30% utilisation, 17 September 2026.
+2. The characterisation of Robert Sagurton's posts (R1, R2) as an enterprise-adoption thesis, and their dates, which were derived from the post IDs.
+3. The phrase "Settled results become onchain state that applications can read" (Case 03, Case 06) against baranos.ai.
+4. Whether the whitepaper uses the terms *Confirmation mode*, *Replay mode* and *Merkle root* as the lessons do. No whitepaper section numbers are cited anywhere in the app.

@@ -1,103 +1,83 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { CASES } from '../content/quest';
 import { useProgress } from '../progressContext';
-import { summaryFrom } from '../domain/summary';
-import { downloadCanvas, renderShareCard } from '../adapters/shareCard';
+import { certificateEligibility, isCompleted, isUnlocked, nextCase } from '../domain/progress';
 import { Link } from '../router';
+import { QuestProgress } from '../components/QuestProgress';
 import styles from './SummaryPage.module.css';
 
 export function SummaryPage() {
   const { progress, reset } = useProgress();
-  const data = summaryFrom(progress);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const [card, setCard] = useState<'idle' | 'ready' | 'failed'>('idle');
   const [confirmReset, setConfirmReset] = useState(false);
-  const finished = data.completed === data.total;
-
-  useEffect(() => {
-    setCard('idle');
-  }, [data.completed]);
-
-  const makeCard = async () => {
-    if (!canvas.current) return;
-    try {
-      await renderShareCard(canvas.current, data);
-      setCard('ready');
-    } catch {
-      setCard('failed');
-    }
-  };
+  const [resetDone, setResetDone] = useState(false);
+  const eligibility = certificateEligibility(progress);
+  const next = nextCase(progress);
 
   return (
     <div className={styles.page}>
       <h1 data-page-heading tabIndex={-1} className={styles.title}>
-        {finished ? 'Case summary: all files closed' : 'Case summary'}
+        Your progress
       </h1>
-      <p className={styles.meta}>
-        {data.completed} of {data.total} cases complete · Rank: {data.rank}
-      </p>
-
-      {data.completed === 0 ? (
-        <p>
-          Nothing to summarise yet. <Link to="/case/01">Open the first case</Link>.
+      {progress.profile && (
+        <p className={styles.meta}>
+          Certificate name: <strong className={styles.name}>{progress.profile.name}</strong> ·{' '}
+          <Link to="/">Edit</Link>
         </p>
-      ) : (
-        <>
-          <section className={styles.panel} aria-labelledby="concepts">
-            <h2 id="concepts">Concepts explored</h2>
-            <ul className={styles.concepts}>
-              {data.concepts.map((c) => (
-                <li key={c.id}>
-                  <span className="num">{c.id}</span> <strong>{c.concept}</strong>
-                  <span className={styles.links}>
-                    <Link to={`/case/${c.id}`}>Replay “{c.title}”</Link> ·{' '}
-                    <Link to={`/notebook#case-${c.id}`}>Review notes</Link>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.justified}>
-              Decisions justified on the first attempt: <strong className="num">{data.justified}</strong> of{' '}
-              <span className="num">{data.decisions}</span>. Recorded on each case’s first completion; replays don’t
-              change it.
-            </p>
-            {finished && (
-              <p>
-                You checked job identity, evidence, execution, settlement and policy, and you named what verification
-                cannot tell you. That is how an application should decide whether it may use an AI result.
-              </p>
-            )}
-          </section>
-
-          <section className={styles.panel} aria-labelledby="share">
-            <h2 id="share">Share card (optional)</h2>
-            <p>
-              Generates an image from your progress in this browser. Nothing is uploaded; you choose whether to save or
-              share it.
-            </p>
-            <div className={styles.actions}>
-              <button type="button" onClick={makeCard}>
-                {card === 'ready' ? 'Regenerate card' : 'Generate card'}
-              </button>
-              {card === 'ready' && (
-                <button type="button" onClick={() => canvas.current && downloadCanvas(canvas.current, 'baranos-lab-progress.png')}>
-                  Download PNG
-                </button>
-              )}
-            </div>
-            {card === 'failed' && <p role="alert">This browser could not draw the card.</p>}
-            <canvas
-              ref={canvas}
-              className={card === 'ready' ? styles.canvas : styles.hidden}
-              role="img"
-              aria-label={`Share card: ${data.completed} of ${data.total} case files, rank ${data.rank}. Concepts: ${data.concepts.map((c) => c.concept).join('; ')}.`}
-            />
-          </section>
-        </>
       )}
+      <QuestProgress progress={progress} />
+
+      <section className={styles.panel} aria-labelledby="cert-heading">
+        <h2 id="cert-heading">Certificate</h2>
+        {eligibility.eligible ? (
+          <>
+            <p>All six cases are complete. Your certificate is ready.</p>
+            <Link to="/certificate" className={styles.button}>
+              View my certificate
+            </Link>
+          </>
+        ) : (
+          <>
+            <p>
+              Complete all six cases to earn your personalised certificate.{' '}
+              {eligibility.remaining.length === 1 ? 'One case to go.' : `${eligibility.remaining.length} cases to go.`}
+            </p>
+            {next && (
+              <Link to={`/case/${next}`} className={styles.button}>
+                Continue quest
+              </Link>
+            )}
+          </>
+        )}
+      </section>
+
+      <section className={styles.panel} aria-labelledby="concepts">
+        <h2 id="concepts">What you’ve explored</h2>
+        <ul className={styles.concepts}>
+          {CASES.map((c, i) => {
+            const done = isCompleted(progress, c.id);
+            return (
+              <li key={c.id}>
+                <span aria-hidden="true">{done ? '✓' : '○'} </span>
+                <span className="visually-hidden">{done ? 'Completed: ' : 'Not yet completed: '}</span>
+                <strong>
+                  Case {i + 1}: {c.title}
+                </strong>
+                <span className={styles.concept}>{c.concept}</span>
+                {(done || isUnlocked(progress, c.id)) && (
+                  <Link to={`/case/${c.id}`} className={styles.inline}>
+                    {done ? 'Revisit' : 'Open'}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <section className={styles.reset} aria-labelledby="reset">
         <h2 id="reset">Start over</h2>
-        <p>Clears the progress saved in this browser.</p>
+        <p>Resetting removes your saved case progress and certificate from this browser. Your certificate name is kept.</p>
+        {resetDone && <p role="status">Progress cleared. You can start again from Case 1.</p>}
         {confirmReset ? (
           <div className={styles.actions}>
             <button
@@ -105,9 +85,10 @@ export function SummaryPage() {
               onClick={() => {
                 reset();
                 setConfirmReset(false);
+                setResetDone(true);
               }}
             >
-              Yes, clear my progress
+              Yes, remove my progress
             </button>
             <button type="button" onClick={() => setConfirmReset(false)}>
               Cancel
@@ -116,7 +97,7 @@ export function SummaryPage() {
         ) : (
           <div className={styles.actions}>
             <button type="button" onClick={() => setConfirmReset(true)}>
-              Clear progress…
+              Reset progress…
             </button>
           </div>
         )}

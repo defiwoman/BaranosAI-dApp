@@ -1,74 +1,151 @@
 import { describe, expect, it } from 'vitest';
-import { emptyProgress, isUnlocked, parseProgress, rankFor, recordCompletion } from './progress';
+import {
+  certificateEligibility,
+  emptyProgress,
+  isCompleted,
+  isUnlocked,
+  missingChecks,
+  parseProgress,
+  passCheck,
+  rankFor,
+  resetProgress,
+  setProfile,
+  type Progress,
+} from './progress';
+import { REQUIRED_CHECKS } from './curriculum';
+import { CASE_IDS } from './types';
 import { loadProgress, saveProgress, STORAGE_KEY } from '../adapters/storage';
 
-const completion = (caseId: '01' | '02', wrong = 0) => ({
-  caseId,
-  decisions: 1,
-  wrongDecisions: wrong,
-  notebook: [`nb-${caseId}`],
-  achievements: [`ach-${caseId}`],
-  at: new Date('2026-09-24T10:00:00Z'),
-});
+const t = (day: number) => new Date(Date.UTC(2026, 8, day, 12));
+const ALL_CHECKS = CASE_IDS.flatMap((id) => REQUIRED_CHECKS[id]);
 
-describe('progress', () => {
-  it('records a completion once; replays do not duplicate achievements or overwrite the first record', () => {
-    let p = recordCompletion(emptyProgress(), completion('01', 1));
-    const first = p.cases['01'];
-    p = recordCompletion(p, { ...completion('01', 0), at: new Date('2026-09-25T10:00:00Z') });
-    expect(p.cases['01']).toEqual(first);
-    expect(p.cases['01']?.justified).toBe(0);
-    expect(p.achievements).toEqual(['ach-01']);
-    expect(p.notebook).toEqual(['nb-01']);
+function passAll(p: Progress, checks = ALL_CHECKS, day = 25): Progress {
+  return checks.reduce((acc, c) => passCheck(acc, c, t(day)), p);
+}
+
+const v1Save = (ids: string[]) =>
+  JSON.stringify({
+    version: 1,
+    cases: Object.fromEntries(ids.map((id, i) => [id, { completedAt: t(20 + i).toISOString(), justified: 1, decisions: 1 }])),
+    notebook: ['execution-mismatch'],
+    achievements: ['Upheld a step challenge'],
+    checkpoints: { '06': { stage: 3, wrong: [] } },
   });
 
-  it('unlocks cases in order', () => {
-    const p = recordCompletion(emptyProgress(), completion('01'));
-    expect(isUnlocked(emptyProgress(), '01')).toBe(true);
-    expect(isUnlocked(emptyProgress(), '02')).toBe(false);
+describe('progress v2', () => {
+  it('completes a case only when all its checks pass, and records the date once', () => {
+    let p = passCheck(emptyProgress(), '06-review-reproduce', t(24));
+    expect(isCompleted(p, '06')).toBe(false);
+    expect(missingChecks(p, '06')).toEqual(['06-review-settled', '06-review-limits']);
+    p = passCheck(passCheck(p, '06-review-settled', t(24)), '06-review-limits', t(25));
+    expect(p.cases['06']).toEqual({ completedAt: t(25).toISOString() });
+    const again = passCheck(p, '06-review-limits', t(30));
+    expect(again).toBe(p);
+  });
+
+  it('unlocks cases in order and ranks by completed cases', () => {
+    const p = passCheck(emptyProgress(), '01-replay');
     expect(isUnlocked(p, '02')).toBe(true);
     expect(isUnlocked(p, '03')).toBe(false);
-  });
-
-  it('assigns descriptive ranks', () => {
-    let p = emptyProgress();
     expect(rankFor(p)).toBe('Observer');
-    p = recordCompletion(recordCompletion(p, completion('01')), completion('02'));
-    expect(rankFor(p)).toBe('Investigator');
   });
 
   it('round-trips through JSON', () => {
-    const p = recordCompletion(emptyProgress(), completion('01'));
+    const p = passAll(setProfile(emptyProgress(), { name: 'Zoë 李', xHandle: 'zoe_1' }));
     expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
   });
 
   it.each([
     ['not JSON', '{oops'],
     ['wrong shape', '[]'],
-    ['unknown case id', JSON.stringify({ version: 1, cases: { '99': { completedAt: '2026-01-01T00:00:00Z', justified: 0, decisions: 1 } }, notebook: [], achievements: [] })],
-    ['bad record', JSON.stringify({ version: 1, cases: { '01': { completedAt: 'yesterday', justified: 3, decisions: 1 } }, notebook: [], achievements: [] })],
-    ['bad notebook', JSON.stringify({ version: 1, cases: {}, notebook: [1], achievements: [] })],
+    ['bad profile', JSON.stringify({ ...emptyProgress(), profile: { name: '   ' } })],
+    ['bad case id', JSON.stringify({ ...emptyProgress(), cases: { '99': { completedAt: t(1).toISOString() } } })],
+    ['bad date', JSON.stringify({ ...emptyProgress(), certificate: { completedAt: 'soon' } })],
+    ['bad checks', JSON.stringify({ ...emptyProgress(), passedChecks: [1] })],
+    ['bad v1', JSON.stringify({ version: 1, cases: { '01': { completedAt: 'yesterday' } } })],
   ])('rejects malformed data (%s)', (_, raw) => {
     expect(parseProgress(raw)).toEqual({ ok: false, reason: 'malformed' });
   });
 
-  it('rejects unsupported versions', () => {
-    expect(parseProgress(JSON.stringify({ version: 99 }))).toEqual({ ok: false, reason: 'unsupported_version' });
+  it('rejects unknown future versions', () => {
+    expect(parseProgress(JSON.stringify({ version: 9 }))).toEqual({ ok: false, reason: 'unsupported_version' });
+  });
+
+  it('reset keeps the certificate name but removes progress and the certificate', () => {
+    const p = passAll(setProfile(emptyProgress(), { name: 'Mira' }));
+    expect(resetProgress(p)).toEqual({ ...emptyProgress(), profile: { name: 'Mira' } });
+  });
+});
+
+describe('migration from the first release (v1)', () => {
+  it('keeps completed cases and asks a full v1 finisher only for the one new final-review check', () => {
+    const r = parseProgress(v1Save(['01', '02', '03', '04', '05', '06']));
+    expect(r.ok && r.migratedFrom).toBe(1);
+    if (!r.ok) return;
+    const p = r.progress;
+    expect(p.profile).toBeNull();
+    for (const id of ['01', '02', '03', '04', '05'] as const) {
+      expect(isCompleted(p, id)).toBe(true);
+    }
+    expect(p.cases['01']).toEqual({ completedAt: t(20).toISOString() });
+    expect(isCompleted(p, '06')).toBe(false);
+    expect(missingChecks(p, '06')).toEqual(['06-review-reproduce']);
+    expect(certificateEligibility(p)).toEqual({ eligible: false, remaining: ['06'], needsName: true });
+  });
+
+  it('keeps partial progress without inventing completions', () => {
+    const r = parseProgress(v1Save(['01', '02']));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(CASE_IDS.filter((id) => isCompleted(r.progress, id))).toEqual(['01', '02']);
+    expect(r.progress.certificate).toBeNull();
+  });
+
+  it('is saved back in the new format by the storage adapter, under the same key', () => {
+    localStorage.setItem(STORAGE_KEY, v1Save(['01']));
+    const loaded = loadProgress(localStorage);
+    expect(loaded.migrated).toBe(true);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(2);
+    expect(loadProgress(localStorage)).toEqual({ progress: loaded.progress, recovered: false, migrated: false });
+  });
+});
+
+describe('certificate eligibility (the single shared rule)', () => {
+  it('requires all six cases', () => {
+    const p = passAll(setProfile(emptyProgress(), { name: 'Ada' }), ALL_CHECKS.slice(0, -1));
+    expect(certificateEligibility(p)).toEqual({ eligible: false, remaining: ['06'], needsName: false });
+  });
+
+  it('requires a name', () => {
+    const p = passAll(emptyProgress());
+    expect(certificateEligibility(p)).toMatchObject({ eligible: false, needsName: true });
+  });
+
+  it('keeps the completion date stable across name changes, replays and reloads', () => {
+    let p = passAll(setProfile(emptyProgress(), { name: 'Ada' }), ALL_CHECKS, 25);
+    const first = certificateEligibility(p);
+    expect(first).toEqual({ eligible: true, name: 'Ada', completedAt: t(25).toISOString() });
+    p = setProfile(p, { name: 'Ada Lovelace' });
+    p = passAll(p, ALL_CHECKS, 30);
+    const reloaded = parseProgress(JSON.stringify(p));
+    expect(reloaded.ok && certificateEligibility(reloaded.progress)).toEqual({
+      eligible: true,
+      name: 'Ada Lovelace',
+      completedAt: t(25).toISOString(),
+    });
+  });
+
+  it('cannot be unlocked by a hand-edited certificate field without the checks', () => {
+    const forged = { ...setProfile(emptyProgress(), { name: 'X' }), certificate: { completedAt: t(1).toISOString() } };
+    const r = parseProgress(JSON.stringify(forged));
+    expect(r.ok && certificateEligibility(r.progress).eligible).toBe(false);
   });
 });
 
 describe('storage adapter', () => {
   it('resets malformed storage and reports recovery', () => {
     localStorage.setItem(STORAGE_KEY, '{broken');
-    const r = loadProgress(localStorage);
-    expect(r).toEqual({ progress: emptyProgress(), recovered: true });
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(emptyProgress());
-  });
-
-  it('restores saved progress', () => {
-    const p = recordCompletion(emptyProgress(), completion('01'));
-    saveProgress(p, localStorage);
-    expect(loadProgress(localStorage)).toEqual({ progress: p, recovered: false });
+    expect(loadProgress(localStorage)).toEqual({ progress: emptyProgress(), recovered: true, migrated: false });
   });
 
   it('survives storage that throws', () => {
@@ -82,27 +159,5 @@ describe('storage adapter', () => {
     } as unknown as Storage;
     expect(loadProgress(throwing).progress).toEqual(emptyProgress());
     expect(saveProgress(emptyProgress(), throwing)).toBe(false);
-  });
-});
-
-describe('checkpoints and summary', () => {
-  it('accepts stage-A progress saved before checkpoints existed', () => {
-    const legacy = JSON.stringify({ version: 1, cases: {}, notebook: [], achievements: [] });
-    expect(parseProgress(legacy)).toEqual({ ok: true, progress: emptyProgress() });
-  });
-
-  it('stores a checkpoint and clears it on completion', async () => {
-    const { saveCheckpoint } = await import('./progress');
-    let p = saveCheckpoint(emptyProgress(), '02', { stage: 2, wrong: ['02-dossier'] });
-    expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
-    p = recordCompletion(p, { ...completion('02'), caseId: '02' });
-    expect(p.checkpoints['02']).toBeUndefined();
-  });
-
-  it('builds the summary only from completed cases', async () => {
-    const { summaryFrom } = await import('./summary');
-    const s = summaryFrom(recordCompletion(emptyProgress(), completion('01', 1)));
-    expect(s).toMatchObject({ completed: 1, total: 6, rank: 'Observer', justified: 0, decisions: 1 });
-    expect(s.concepts.map((c) => c.id)).toEqual(['01']);
   });
 });
