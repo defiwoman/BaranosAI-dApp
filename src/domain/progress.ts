@@ -10,17 +10,24 @@ export interface CaseRecord {
   decisions: number;
 }
 
+/** Where an unfinished case was left, so a refresh resumes at the same stage. */
+export interface Checkpoint {
+  stage: number;
+  wrong: string[];
+}
+
 export interface Progress {
   version: typeof PROGRESS_VERSION;
   cases: Partial<Record<CaseId, CaseRecord>>;
   notebook: string[];
   achievements: string[];
+  checkpoints: Partial<Record<CaseId, Checkpoint>>;
 }
 
 export type Rank = 'Observer' | 'Investigator' | 'Challenger';
 
 export function emptyProgress(): Progress {
-  return { version: PROGRESS_VERSION, cases: {}, notebook: [], achievements: [] };
+  return { version: PROGRESS_VERSION, cases: {}, notebook: [], achievements: [], checkpoints: {} };
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -38,6 +45,12 @@ function isCaseRecord(value: unknown): value is CaseRecord {
     (r.justified as number) >= 0 &&
     (r.justified as number) <= (r.decisions as number)
   );
+}
+
+function isCheckpoint(value: unknown): value is Checkpoint {
+  if (typeof value !== 'object' || value === null) return false;
+  const r = value as Record<string, unknown>;
+  return Number.isInteger(r.stage) && (r.stage as number) >= 0 && (r.stage as number) < 50 && isStringArray(r.wrong);
 }
 
 export type ParseResult = { ok: true; progress: Progress } | { ok: false; reason: 'empty' | 'malformed' | 'unsupported_version' };
@@ -64,6 +77,17 @@ export function parseProgress(raw: string | null): ParseResult {
     if (!isCaseId(key) || !isCaseRecord(value)) return { ok: false, reason: 'malformed' };
     cases[key] = { completedAt: value.completedAt, justified: value.justified, decisions: value.decisions };
   }
+  // `checkpoints` was added after the first playable build; a missing field means none.
+  const checkpoints: Progress['checkpoints'] = {};
+  if (d.checkpoints !== undefined) {
+    if (typeof d.checkpoints !== 'object' || d.checkpoints === null || Array.isArray(d.checkpoints)) {
+      return { ok: false, reason: 'malformed' };
+    }
+    for (const [key, value] of Object.entries(d.checkpoints as Record<string, unknown>)) {
+      if (!isCaseId(key) || !isCheckpoint(value)) return { ok: false, reason: 'malformed' };
+      checkpoints[key] = { stage: value.stage, wrong: [...new Set(value.wrong)] };
+    }
+  }
   return {
     ok: true,
     progress: {
@@ -71,6 +95,7 @@ export function parseProgress(raw: string | null): ParseResult {
       cases,
       notebook: [...new Set(d.notebook)],
       achievements: [...new Set(d.achievements)],
+      checkpoints,
     },
   };
 }
@@ -91,14 +116,24 @@ export interface Completion {
 export function recordCompletion(progress: Progress, c: Completion): Progress {
   const existing = progress.cases[c.caseId];
   const justified = Math.max(0, c.decisions - c.wrongDecisions);
+  const checkpoints = { ...progress.checkpoints };
+  delete checkpoints[c.caseId];
   return {
     ...progress,
+    checkpoints,
     cases: existing
       ? progress.cases
       : { ...progress.cases, [c.caseId]: { completedAt: c.at.toISOString(), justified, decisions: c.decisions } },
     notebook: [...new Set([...progress.notebook, ...c.notebook])],
     achievements: [...new Set([...progress.achievements, ...c.achievements])],
   };
+}
+
+export function saveCheckpoint(progress: Progress, caseId: CaseId, checkpoint: Checkpoint | null): Progress {
+  const checkpoints = { ...progress.checkpoints };
+  if (checkpoint === null || checkpoint.stage === 0) delete checkpoints[caseId];
+  else checkpoints[caseId] = { stage: checkpoint.stage, wrong: [...checkpoint.wrong] };
+  return { ...progress, checkpoints };
 }
 
 export function completedCases(progress: Progress): CaseId[] {

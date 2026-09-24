@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { CASES, caseById } from '../content/cases';
 import { CASE_IDS, isCaseId, type CaseId } from '../domain/types';
 import { isCompleted, nextCase } from '../domain/progress';
@@ -12,7 +12,7 @@ import styles from './CasePage.module.css';
 
 export function CasePage({ id }: { id: string }) {
   if (!isCaseId(id)) return <NotFoundPage />;
-  return <CaseView id={id} />;
+  return <CaseView key={id} id={id} />;
 }
 
 function CaseView({ id }: { id: CaseId }) {
@@ -20,6 +20,8 @@ function CaseView({ id }: { id: CaseId }) {
   const summary = caseById(id);
   const a = availability(progress, summary);
   const Component = CASE_COMPONENTS[id];
+  // Whether the case was already complete when opened; stays fixed during this visit.
+  const [completedBefore] = useState(() => isCompleted(progress, id));
 
   const onComplete = useCallback(
     (r: { decisions: number; wrongDecisions: number }) =>
@@ -87,7 +89,7 @@ function CaseView({ id }: { id: CaseId }) {
           <Component
             key={id}
             onComplete={onComplete}
-            alreadyCompleted={isCompleted(progress, id)}
+            alreadyCompleted={completedBefore}
             nextAction={nextAction}
           />
         )}

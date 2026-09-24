@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { loadProgress, saveProgress } from './adapters/storage';
-import { emptyProgress, recordCompletion, type Completion, type Progress } from './domain/progress';
+import { emptyProgress, recordCompletion, saveCheckpoint, type Checkpoint, type Completion, type Progress } from './domain/progress';
+import type { CaseId } from './domain/types';
 
 interface ProgressValue {
   progress: Progress;
   recovered: boolean;
   dismissRecovered: () => void;
   complete: (c: Omit<Completion, 'at'>) => void;
+  checkpoint: (caseId: CaseId, cp: Checkpoint | null) => void;
   reset: () => void;
 }
 
@@ -25,11 +27,15 @@ export function ProgressProvider({ children, storage }: { children: ReactNode; s
     setProgress((p) => recordCompletion(p, { ...c, at: new Date() }));
   }, []);
 
+  const checkpoint = useCallback((caseId: CaseId, cp: Checkpoint | null) => {
+    setProgress((p) => saveCheckpoint(p, caseId, cp));
+  }, []);
+
   const reset = useCallback(() => setProgress(emptyProgress()), []);
 
   return (
     <ProgressContext.Provider
-      value={{ progress, recovered, dismissRecovered: () => setRecovered(false), complete, reset }}
+      value={{ progress, recovered, dismissRecovered: () => setRecovered(false), complete, checkpoint, reset }}
     >
       {children}
     </ProgressContext.Provider>

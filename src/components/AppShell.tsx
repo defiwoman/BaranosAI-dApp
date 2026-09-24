@@ -7,6 +7,7 @@ import styles from './AppShell.module.css';
 const NAV = [
   { to: '/cases', label: 'Cases' },
   { to: '/notebook', label: 'Notebook' },
+  { to: '/summary', label: 'Summary' },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

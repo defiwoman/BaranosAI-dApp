@@ -2,6 +2,19 @@
 
 All incidents, characters, toy models, sample receipts and timings below are original fictional teaching material. They do not describe a Baranos incident, an actual deployed verifier or measured chain behavior.
 
+## Curriculum v1.0 changes (implemented)
+
+Central objective: players understand how an application can check an agreed AI computation, challenge incorrect execution and decide when it may use a result.
+
+- **01:** unchanged; exact toy job, correction from 25 to 23. Practice variants move the faulty step.
+- **02:** the original operator is offline. Players assemble model / inputs / execution rules for an independent reviewer (the posted result and an avatar are *not* part of the job), classify a changed file versus unavailable committed evidence, and report *review incomplete*.
+- **03:** find Harbor's premature action, move it after settlement, identify the Confirmation route, sort accurate/inaccurate claims (Replay executes onchain from the outset; block time ≠ inference time; silence is no guarantee), then resolve a challenge by disputed-step replay.
+- **04:** correct execution over an inaccurate draft input; a correction is a new job (H-0412-b) under Harbor's evidence policy; the settled record is not edited.
+- **05:** separate the agreed application policy from an instruction embedded in the evidence; the result is unusable; mitigations reduce but do not solve prompt injection.
+- **06:** a fictional workshop-outcome scenario (replacing "market-resolution"). Checks job identity, agreed criteria, evidence policy, settlement status and the permitted action through pending → disputed → settled, and names a remaining uncertainty. A right action with the wrong reason is rejected.
+
+Wrong answers give option-specific feedback. First-attempt justified decisions are recorded once per case.
+
 ## Story
 
 You have joined a review desk for a demonstration application called Harbor. Its developers want to use AI results in automated decisions. Mira, a colleague, hands you a series of jobs that need review. Some contain execution errors; others expose weaknesses in the evidence or rules. Your task is to identify the right kind of problem and decide what to do next.

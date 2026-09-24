@@ -19,7 +19,7 @@ export const CASES: CaseSummary[] = [
     storyEvent: 'The original operator is offline and a reviewer must reproduce the job alone.',
     objective: 'Assemble the complete job and tell changed evidence apart from unavailable evidence.',
     concept: 'Job specification and data availability',
-    playable: false,
+    playable: true,
   },
   {
     id: '03',
@@ -27,7 +27,7 @@ export const CASES: CaseSummary[] = [
     storyEvent: 'Harbor acted on a posted result before it settled.',
     objective: 'Compare Confirmation and Replay, and separate posting from settlement.',
     concept: 'Posting, challenge and settlement',
-    playable: false,
+    playable: true,
   },
   {
     id: '04',
@@ -35,7 +35,7 @@ export const CASES: CaseSummary[] = [
     storyEvent: 'Every step is computed correctly, but one input is wrong.',
     objective: 'Separate correct execution from a truthful conclusion and handle a correction as a new job.',
     concept: 'Execution integrity versus answer quality',
-    playable: false,
+    playable: true,
   },
   {
     id: '05',
@@ -43,7 +43,7 @@ export const CASES: CaseSummary[] = [
     storyEvent: 'An evidence document tells the model to ignore its task.',
     objective: 'Distinguish text inside evidence from the agreed application policy.',
     concept: 'Evidence versus policy (prompt injection risk)',
-    playable: false,
+    playable: true,
   },
   {
     id: '06',
@@ -51,7 +51,7 @@ export const CASES: CaseSummary[] = [
     storyEvent: 'Harbor wants to act on whether a fictional workshop took place.',
     objective: 'Check job identity, criteria, evidence policy and settlement, then choose the permitted action.',
     concept: 'Deciding when a result may be used',
-    playable: false,
+    playable: true,
   },
 ];
 

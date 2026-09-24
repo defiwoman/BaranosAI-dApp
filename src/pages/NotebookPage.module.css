@@ -55,3 +55,54 @@
   color: var(--ink-2);
   margin: 10px 0 0;
 }
+
+.entry:focus {
+  outline: 3px solid var(--focus);
+}
+
+.search {
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  margin: 16px 0;
+}
+
+.search input {
+  min-height: var(--tap);
+  font: inherit;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--powder);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.count {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--shell-muted);
+  font-size: 0.9rem;
+}
+
+.register {
+  margin-top: 32px;
+  border-top: 1px solid var(--shell-rule);
+  padding-top: 12px;
+}
+
+.register summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.register li {
+  margin-bottom: 8px;
+}
+
+.boundary {
+  color: var(--shell-muted);
+}

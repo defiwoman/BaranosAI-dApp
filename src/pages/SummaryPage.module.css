@@ -1,0 +1,98 @@
+.page {
+  max-width: 880px;
+}
+
+.title {
+  font-size: 2rem;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.meta {
+  color: var(--powder);
+}
+
+.panel {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin: 18px 0;
+}
+
+.panel a {
+  color: var(--ink);
+}
+
+.concepts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.concepts li {
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.links {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+.justified {
+  margin-top: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.actions button {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panel .actions button:first-child {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+.reset {
+  margin-top: 32px;
+  color: var(--shell-muted);
+}
+
+.reset h2 {
+  font-size: 1.1rem;
+  color: var(--logo-light);
+}

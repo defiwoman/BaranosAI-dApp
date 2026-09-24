@@ -84,3 +84,25 @@ describe('storage adapter', () => {
     expect(saveProgress(emptyProgress(), throwing)).toBe(false);
   });
 });
+
+describe('checkpoints and summary', () => {
+  it('accepts stage-A progress saved before checkpoints existed', () => {
+    const legacy = JSON.stringify({ version: 1, cases: {}, notebook: [], achievements: [] });
+    expect(parseProgress(legacy)).toEqual({ ok: true, progress: emptyProgress() });
+  });
+
+  it('stores a checkpoint and clears it on completion', async () => {
+    const { saveCheckpoint } = await import('./progress');
+    let p = saveCheckpoint(emptyProgress(), '02', { stage: 2, wrong: ['02-dossier'] });
+    expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
+    p = recordCompletion(p, { ...completion('02'), caseId: '02' });
+    expect(p.checkpoints['02']).toBeUndefined();
+  });
+
+  it('builds the summary only from completed cases', async () => {
+    const { summaryFrom } = await import('./summary');
+    const s = summaryFrom(recordCompletion(emptyProgress(), completion('01', 1)));
+    expect(s).toMatchObject({ completed: 1, total: 6, rank: 'Observer', justified: 0, decisions: 1 });
+    expect(s.concepts.map((c) => c.id)).toEqual(['01']);
+  });
+});

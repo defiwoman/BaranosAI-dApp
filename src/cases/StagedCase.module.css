@@ -1,0 +1,80 @@
+.resumed {
+  color: var(--shell-muted);
+}
+
+.linkButton {
+  background: none;
+  border: 0;
+  color: var(--powder);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  min-height: var(--tap);
+  padding: 0 4px;
+}
+
+.steps {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.9rem;
+}
+
+.stepDone {
+  color: var(--powder);
+}
+
+.stepNow {
+  color: var(--logo-light);
+  font-weight: 700;
+}
+
+.stepLater {
+  color: var(--shell-muted);
+}
+
+.stageHeading {
+  font-size: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stageHeading:focus {
+  outline: none;
+}
+
+.stageHeading:focus-visible {
+  outline: 3px solid var(--focus);
+}
+
+.stageNum {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--powder);
+}
+
+.job {
+  color: var(--logo-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty,
+.mode {
+  color: var(--shell-muted);
+  font-size: 0.9rem;
+}
+
+.findings {
+  margin: 0 0 12px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.findings li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}

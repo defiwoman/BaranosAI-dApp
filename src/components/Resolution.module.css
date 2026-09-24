@@ -1,4 +1,6 @@
 .resolution {
+  /* Native controls on paper use light styling. */
+  color-scheme: light;
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius);

@@ -52,3 +52,25 @@ export interface TechnicalNote {
   paragraphs: string[];
   sources: SourceRef[];
 }
+
+export interface StageContent {
+  id: string;
+  heading: string;
+  mira?: string[];
+  task: import('../domain/tasks').Task;
+}
+
+export interface StagedCaseContent {
+  id: CaseId;
+  job: string;
+  brief: string[];
+  stages: StageContent[];
+  resolution: {
+    verdict: { tone: 'upheld' | 'matches' | 'incomplete' | 'hold'; label: string };
+    consequence: string;
+    explanation: string[];
+  };
+  relation: TechnicalNote;
+  hook?: string;
+  notebook: NotebookEntry[];
+}

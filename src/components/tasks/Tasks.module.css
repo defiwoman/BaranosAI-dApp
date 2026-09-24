@@ -1,0 +1,142 @@
+.task {
+  /* Native controls on paper use light styling. */
+  color-scheme: light;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+}
+
+.fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.prompt {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+  padding: 0;
+}
+
+.option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.option input,
+.place input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--ink);
+}
+
+.optionSelected {
+  border-color: var(--ink);
+  box-shadow: inset 4px 0 0 var(--ink);
+}
+
+.fieldset:disabled .option,
+.fieldset:disabled .place {
+  cursor: default;
+}
+
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.card {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: #fff;
+}
+
+.cardWrong {
+  border-color: var(--error);
+  border-left-width: 5px;
+}
+
+.cardLabel {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.cardDetail {
+  display: block;
+  font-weight: normal;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.placeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.place {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.place input {
+  margin: 0;
+}
+
+.placeOn {
+  border-color: var(--ink);
+  background: rgba(191, 211, 246, 0.55);
+}
+
+.itemFeedback {
+  color: var(--error);
+  margin: 8px 0 0;
+}
+
+.itemHint {
+  color: var(--ink-2);
+  margin: 8px 0 0;
+  font-style: italic;
+}
+
+.actions {
+  margin-top: 12px;
+}
+
+.primary {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  cursor: pointer;
+}

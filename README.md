@@ -4,6 +4,11 @@ A community-built learning simulation for the Fogo community. Players review fic
 
 **What is simulated:** every case uses fictional jobs and a toy arithmetic model computed in the browser. Nothing in this release submits a Baranos job, connects a wallet or sends a blockchain transaction. Guest progress is stored only in the browser's `localStorage`.
 
+## Status
+
+- **Stage A** (first playable case) and **Stage B** (all six cases, notebook with search, review/replay, resumable progress, local share card) are implemented.
+- **Not implemented:** wallet connection and testnet completion records (Stage C) and live Baranos jobs (Stage D). Neither is simulated as if it were live.
+
 ## Running locally
 
 Tested with **Node 22.22.2** and npm 10.9.7 (`.nvmrc` pins Node 22; Vite 8 requires Node ≥ 20.19 or ≥ 22.12).
