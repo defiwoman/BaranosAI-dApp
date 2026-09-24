@@ -269,7 +269,7 @@ export const CASE02: StagedCaseContent = {
       'Baranos describes each job as fixing the model, evidence and execution rules so independent participants can reproduce the computation. It uses open-weight models so other executors can run the same job; in Confirmation mode a Merkle root commits to the weights while the weights themselves remain offchain.',
       'That is why availability matters: a commitment lets a checker confirm they hold the right data, but someone still has to be able to get the data. The registry and commitment formats in this case are invented for teaching. Baranos’s actual registry interface has not been published for this app and is not modelled here.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B1', locator: '§2 and §6' }],
+    sources: [{ id: 'B2' }, { id: 'B1' }],
   },
   hook: 'The next job was checked properly, but Harbor didn’t wait for the check. It acted the moment a result was posted.',
   notebook: [
@@ -279,7 +279,7 @@ export const CASE02: StagedCaseContent = {
       category: 'Execution rules',
       title: 'A complete job specification',
       body: 'To reproduce a job, a reviewer needs the model (version, weights, tokenizer), the inputs (evidence and prompt) and the execution rules (decoding policy, numeric precision, operation order). The posted result is what gets checked; it is not part of the job.',
-      sources: [{ id: 'B1', locator: '§2' }, { id: 'B2' }],
+      sources: [{ id: 'B1' }, { id: 'B2' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -288,7 +288,7 @@ export const CASE02: StagedCaseContent = {
       category: 'Commitments',
       title: 'A commitment is not the data',
       body: 'A commitment such as a hash or Merkle root identifies data. It cannot recover missing contents and does not prove that a computation happened or was correct. If the committed data cannot be retrieved, the review is incomplete.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§6' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -297,7 +297,7 @@ export const CASE02: StagedCaseContent = {
       category: 'Evidence',
       title: 'Changed evidence defines a new job',
       body: 'Evidence whose contents differ from the committed file is different evidence. It can be the input to a new job with its own commitment, but it cannot be used to check or replace the original job.',
-      sources: [{ id: 'B1', locator: '§2' }],
+      sources: [{ id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
   ],

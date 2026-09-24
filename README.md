@@ -11,7 +11,7 @@ A community-built learning simulation for the Fogo community. Players review fic
 
 ## Running locally
 
-Tested with **Node 22.22.2** and npm 10.9.7 (`.nvmrc` pins Node 22; Vite 8 requires Node ≥ 20.19 or ≥ 22.12).
+Tested with **Node 22.22.2** and npm 10.9.7. `.nvmrc` and `netlify.toml` pin the same version; Vite 8 requires Node ≥ 20.19 or ≥ 22.12.
 
 ```bash
 npm ci          # install from the committed lockfile
@@ -31,7 +31,7 @@ No environment variables are needed for the simulation.
 | --- | --- |
 | Build command | `npm run build` |
 | Publish directory | `dist` |
-| Node version | `22` (set by `NODE_VERSION` in `netlify.toml`) |
+| Node version | `22.22.2` (set by `NODE_VERSION` in `netlify.toml`, matching `.nvmrc`) |
 | Route refreshes | `/* → /index.html 200` redirect in `netlify.toml` |
 
 Steps: in Netlify choose *Add new site → Import an existing project*, connect this GitHub repository, pick the branch, and accept the settings read from `netlify.toml`. Netlify's Vite guide: https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/

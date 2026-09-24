@@ -195,7 +195,7 @@ export const CASE04: StagedCaseContent = {
       'Baranos presents verification as establishing that a computation conformed to the agreed job, not that the model’s conclusion is true. For language models the same gap covers hallucination, bias and poor domain judgement.',
       'Evidence policy is the application’s responsibility: which sources are allowed, when evidence is frozen, and how corrections are handled. In this game that policy is Harbor’s; it is not a Baranos rule.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B1', locator: '§§7–8 and §10' }],
+    sources: [{ id: 'B2' }, { id: 'B1' }],
   },
   hook: 'The next record didn’t just contain a wrong number. It contained an instruction.',
   notebook: [
@@ -205,7 +205,7 @@ export const CASE04: StagedCaseContent = {
       category: 'Limitations',
       title: 'Correct execution is not a true conclusion',
       body: 'Verification can show that the agreed computation ran as specified. It does not show the inputs were accurate or that the model’s answer is true. Inaccurate evidence gives a faithfully computed wrong answer.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§10' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -214,7 +214,7 @@ export const CASE04: StagedCaseContent = {
       category: 'Evidence',
       title: 'Evidence policy and corrections',
       body: 'An application decides which sources count as evidence, when evidence is frozen and how corrections work. A correction is a new job with new committed evidence; a settled historical result stays tied to its original specification.',
-      sources: [{ id: 'B1', locator: '§§7–8' }],
+      sources: [{ id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
   ],

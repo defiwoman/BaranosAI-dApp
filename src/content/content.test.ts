@@ -52,6 +52,12 @@ describe('content integrity', () => {
     for (const e of NOTEBOOK) expect(e.sources.length).toBeGreaterThan(0);
   });
 
+  it('cites no unverified section numbers', () => {
+    const refs: SourceRef[] = [...STAGED.flatMap((c) => c.relation.sources), ...NOTEBOOK.flatMap((e) => e.sources)];
+    expect(refs.filter((r) => r.locator)).toEqual([]);
+    expect(JSON.stringify([STAGED, NOTEBOOK])).not.toMatch(/§/);
+  });
+
   it('links sources over https', () => {
     for (const s of Object.values(SOURCES)) expect(s.url).toMatch(/^https:\/\//);
   });

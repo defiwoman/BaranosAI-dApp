@@ -184,10 +184,10 @@ export const CASE05: StagedCaseContent = {
   relation: {
     title: 'How this relates to Baranos',
     paragraphs: [
-      'Baranos verifies that a computation followed the committed job. What a model does with adversarial content in its inputs is a question of model and application design. For the protocol’s own account of remaining risks, see the whitepaper’s security section.',
+      'Baranos verifies that a computation followed the committed job. What a model does with adversarial content in its inputs is a question of model and application design. For the protocol’s own account of its security assumptions, see the whitepaper.',
       'Nothing in this exercise, and no deterministic inference system, eliminates prompt injection. Separating evidence from policy, restricting outputs and adversarial testing reduce the risk.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B1', locator: '§10' }],
+    sources: [{ id: 'B2' }, { id: 'B1' }],
   },
   hook: 'Harbor wants to use a result for real now. Last file. Let’s do every check properly.',
   notebook: [
@@ -197,7 +197,7 @@ export const CASE05: StagedCaseContent = {
       category: 'Evidence',
       title: 'Evidence is not instructions',
       body: 'Text inside an evidence document is material to assess, even when it is phrased as a command. The task and the acceptable outputs come from the application’s agreed policy.',
-      sources: [{ id: 'B1', locator: '§10' }],
+      sources: [{ id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -206,7 +206,7 @@ export const CASE05: StagedCaseContent = {
       category: 'Limitations',
       title: 'Verification does not stop prompt injection',
       body: 'A verified run can faithfully reproduce a model following injected text. Delimiting evidence, allow-listing outputs and adversarial testing reduce the risk; none of them eliminates it.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§10' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
   ],

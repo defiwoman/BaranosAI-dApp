@@ -4,7 +4,7 @@ export type SourceId = 'B1' | 'B2' | 'B3' | 'R1' | 'R2' | 'D1' | 'F1' | 'F2';
 
 export interface SourceRef {
   id: SourceId;
-  /** Optional section or passage, e.g. "§§2–3". */
+  /** Optional section or passage. Only add one after checking it against the source itself. */
   locator?: string;
 }
 

@@ -118,6 +118,8 @@ Completion unlocks a summary card listing the six concepts actually explored and
 
 ## Optional technical reading map
 
+Planning aid from the kit. These section numbers have not been checked against the PDF and are not cited in the app.
+
 | Topic | Suggested source section |
 | --- | --- |
 | Deterministic job variables | Whitepaper §2 |

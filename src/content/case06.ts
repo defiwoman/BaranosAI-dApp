@@ -302,7 +302,7 @@ export const CASE06: StagedCaseContent = {
       'In posts on X on 21 and 22 September 2026, Fogo co-founder Robert Sagurton described enterprise adoption of verifiable AI. That is a thesis about the future, not a description of current adoption or customers.',
       'Harbor, the badge and the workshop are fictional, and this is not a prediction market or a live integration.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B3' }, { id: 'B1', locator: '§§7–9' }, { id: 'R1' }, { id: 'R2' }],
+    sources: [{ id: 'B2' }, { id: 'B3' }, { id: 'B1' }, { id: 'R1' }, { id: 'R2' }],
   },
   notebook: [
     {
@@ -311,7 +311,7 @@ export const CASE06: StagedCaseContent = {
       category: 'Settlement',
       title: 'Checks before using a result',
       body: 'Job identity (is this the registered job?), agreed criteria, evidence policy, settlement status, and the action the application’s policy permits for that status. Name the uncertainty that remains afterwards.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§§7–9' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -320,7 +320,7 @@ export const CASE06: StagedCaseContent = {
       category: 'Model',
       title: 'Versions matter',
       body: 'Two jobs can give the same answer under different specifications. An application uses only the result of the job it registered: the same model version, evidence policy and cutoff.',
-      sources: [{ id: 'B1', locator: '§6' }],
+      sources: [{ id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
   ],

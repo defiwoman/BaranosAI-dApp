@@ -70,7 +70,7 @@ export const CASE01 = {
       'Baranos describes jobs that fix the model, evidence and execution rules, so independent participants can reproduce a computation and challenge a result. In Confirmation mode, inference normally runs offchain; a challenged portion is replayed and adjudicated onchain under the committed rules.',
       'This case imitates that idea with a three-step arithmetic trace. The game exposes a tiny trace for teaching; it does not reproduce the production dispute protocol, and Harbor Score v1 is not an LLM.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B1', locator: '§§2–3' }] as SourceRef[],
+    sources: [{ id: 'B2' }, { id: 'B1' }] as SourceRef[],
   } satisfies TechnicalNote,
 };
 
@@ -80,6 +80,6 @@ export const CASE01_NOTEBOOK: NotebookEntry = {
   category: 'Challenges',
   title: 'Execution mismatch',
   body: 'A challenge targets a specific step that breaks the agreed job. Replaying that step under the agreed rules corrects it and everything downstream of it. Disagreeing with the final answer is not the same as identifying the step that is wrong.',
-  sources: [{ id: 'B1', locator: '§§2–3' }, { id: 'B2' }],
+  sources: [{ id: 'B1' }, { id: 'B2' }],
   curriculumVersion: CURRICULUM_VERSION,
 };

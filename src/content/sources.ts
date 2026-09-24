@@ -12,7 +12,7 @@ export const SOURCES: Record<SourceId, Source> = {
     author: 'Baranos',
     url: 'https://www.baranos.ai/assets/baranos-whitepaper.pdf?v=20260914',
     date: '14 Sep 2026',
-    boundary: 'Protocol design reference. Section references follow the build kit’s reading map.',
+    boundary: 'Protocol design reference, linked as a whole document. Section numbers are not cited because they could not be checked against the PDF.',
   },
   B2: {
     id: 'B2',

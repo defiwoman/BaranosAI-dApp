@@ -249,7 +249,7 @@ export const CASE03: StagedCaseContent = {
       'Baranos describes Confirmation mode as offchain inference with onchain verification and replay of disputed steps. Replay mode executes onchain from the outset. The timeline here is illustrative and has no durations; it is not a measurement of either mode.',
       'On 17 September 2026, Doug Colkitt reported on X that an LLM had run entirely onchain on Fogo testnet, with every step a standard SVM transaction. He described Qwen3.5-4B with a 30-token prompt and a 52-token completion, at about 300 seconds per decode token and roughly 30% chain utilisation. That is a reported research demonstration under those conditions, not a Baranos benchmark. It also shows that Fogo block time and AI inference time are different measurements.',
     ],
-    sources: [{ id: 'B2' }, { id: 'B1', locator: '§3 and §§4–5' }, { id: 'D1' }],
+    sources: [{ id: 'B2' }, { id: 'B1' }, { id: 'D1' }],
   },
   hook: 'The next job settled cleanly and every step checks out. Something is still wrong with the answer.',
   notebook: [
@@ -259,7 +259,7 @@ export const CASE03: StagedCaseContent = {
       category: 'Settlement',
       title: 'Posted is not settled',
       body: 'A posted result can still be challenged. An application that should act only on final results waits for settlement under the challenge policy. An unchallenged result still depends on data availability and on someone capable checking.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§3' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -268,7 +268,7 @@ export const CASE03: StagedCaseContent = {
       category: 'Challenges',
       title: 'Confirmation and Replay',
       body: 'Confirmation: inference normally runs offchain, and a disputed portion is replayed onchain under the committed rules. Replay: execution happens onchain from the outset.',
-      sources: [{ id: 'B2' }, { id: 'B1', locator: '§3' }],
+      sources: [{ id: 'B2' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
     {
@@ -277,7 +277,7 @@ export const CASE03: StagedCaseContent = {
       category: 'Limitations',
       title: 'Block time is not inference time',
       body: 'How often a chain produces blocks, how long an inference takes and how long a result takes to settle are three different measurements. A reported demonstration keeps its date, conditions and attribution; it is not a general benchmark.',
-      sources: [{ id: 'D1' }, { id: 'B1', locator: '§12' }],
+      sources: [{ id: 'D1' }, { id: 'B1' }],
       curriculumVersion: CURRICULUM_VERSION,
     },
   ],
