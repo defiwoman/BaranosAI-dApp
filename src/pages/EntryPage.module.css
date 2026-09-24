@@ -1,0 +1,156 @@
+.entry {
+  display: grid;
+  gap: 40px;
+}
+
+.hero {
+  display: grid;
+  gap: 24px;
+  align-items: center;
+}
+
+@media (min-width: 800px) {
+  .hero {
+    grid-template-columns: 260px 1fr;
+    gap: 48px;
+    padding: 24px 0;
+  }
+}
+
+.logo {
+  width: min(200px, 55vw);
+  height: auto;
+  aspect-ratio: 1;
+  display: block;
+  border-radius: 12px;
+}
+
+@media (min-width: 800px) {
+  .logo {
+    width: 260px;
+  }
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: var(--powder);
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: clamp(2rem, 6vw, 3rem);
+}
+
+.title:focus {
+  outline: none;
+}
+
+.premise {
+  font-size: 1.15rem;
+  max-width: 38em;
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 20px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--powder);
+}
+
+.primary {
+  background: var(--powder);
+  color: var(--cover-navy);
+}
+
+.primary:hover {
+  background: var(--logo-light);
+}
+
+.secondary {
+  color: var(--logo-light);
+}
+
+.progress {
+  color: var(--powder);
+}
+
+.note {
+  color: var(--shell-muted);
+  max-width: 38em;
+  font-size: 0.95rem;
+}
+
+.preview h2 {
+  font-size: 1.4rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--shell-rule);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 2.5em 1fr;
+  gap: 2px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--shell-rule);
+  align-items: baseline;
+}
+
+@media (min-width: 640px) {
+  .item {
+    grid-template-columns: 2.5em 1fr auto;
+  }
+}
+
+.id {
+  color: var(--powder);
+}
+
+.itemTitle {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+}
+
+.itemTitle a {
+  color: var(--logo-light);
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.itemStatus {
+  grid-column: 2;
+  font-size: 0.875rem;
+  color: var(--shell-muted);
+}
+
+@media (min-width: 640px) {
+  .itemStatus {
+    grid-column: 3;
+  }
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  margin-top: 8px;
+}

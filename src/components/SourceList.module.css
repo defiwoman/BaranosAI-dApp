@@ -1,0 +1,27 @@
+.wrap {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.label {
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.list li {
+  margin-bottom: 4px;
+}
+
+.list a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.meta {
+  opacity: 0.8;
+}

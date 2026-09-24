@@ -1,5 +1,53 @@
 # Baranos Lab: The Verification Files
 
+A community-built learning simulation for the Fogo community. Players review fictional AI jobs for a demonstration app called Harbor and learn how an application can check an agreed computation, challenge incorrect execution and decide when it may use a result.
+
+**What is simulated:** every case uses fictional jobs and a toy arithmetic model computed in the browser. Nothing in this release submits a Baranos job, connects a wallet or sends a blockchain transaction. Guest progress is stored only in the browser's `localStorage`.
+
+## Running locally
+
+Tested with **Node 22.22.2** and npm 10.9.7 (`.nvmrc` pins Node 22; Vite 8 requires Node ≥ 20.19 or ≥ 22.12).
+
+```bash
+npm ci          # install from the committed lockfile
+npm run dev     # development server at http://localhost:5173
+npm test        # unit and component tests (Vitest + Testing Library)
+npm run build   # type check (tsc -b) and production build into dist/
+npm run preview # serve dist/ locally
+```
+
+No environment variables are needed for the simulation.
+
+## Deploying to Netlify
+
+`netlify.toml` at the repository root configures everything; the app lives at the repository root, so leave **Base directory** empty.
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npm run build` |
+| Publish directory | `dist` |
+| Node version | `22` (set by `NODE_VERSION` in `netlify.toml`) |
+| Route refreshes | `/* → /index.html 200` redirect in `netlify.toml` |
+
+Steps: in Netlify choose *Add new site → Import an existing project*, connect this GitHub repository, pick the branch, and accept the settings read from `netlify.toml`. Netlify's Vite guide: https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/
+
+Hosting the frontend is separate from any future Fogo program deployment. A hosted preview is not an onchain release.
+
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `src/content/` | Case text, fixtures, notebook entries and the source register (no React) |
+| `src/domain/` | Pure functions: toy model, case state machines, progress schema |
+| `src/adapters/` | `simulation` execution adapter and browser storage |
+| `src/cases/` | One component per case |
+| `src/components/`, `src/pages/` | Shared UI and routed pages |
+| `public/brand/baranos-logo.png` | The supplied logo, unchanged |
+
+---
+
+# Build kit
+
 Claude Code build kit · Draft 1 · 22 September 2026
 
 A community-built learning adventure for the Fogo community, with explanations suitable for people new to verifiable AI. The owner chose investigative missions within a continuing story, the supplied Baranos logo, and the whitepaper's visual direction. Development will take place in Claude Code in the browser. The owner is in contact with the Baranos team.

@@ -1,0 +1,210 @@
+.desk {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  .desk {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+
+  .finding {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.workspace {
+  min-width: 0;
+}
+
+.finding {
+  background: rgba(191, 211, 246, 0.07);
+  border: 1px solid var(--shell-rule);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.finding h2 {
+  font-size: 1.15rem;
+}
+
+.paper {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin-bottom: 16px;
+}
+
+.paper a {
+  color: var(--ink);
+}
+
+.paperTitle {
+  font-size: 1.2rem;
+}
+
+.tabs {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.tablist {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+}
+
+.tab {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+  font-weight: 600;
+}
+
+.tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.tabpanel {
+  padding: 16px;
+}
+
+.tabpanel:focus-visible {
+  outline-offset: -3px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.button {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  border: 1px solid var(--powder);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button_primary {
+  background: var(--powder);
+  color: var(--cover-navy);
+}
+
+.button_primary:not(:disabled):hover {
+  background: var(--logo-light);
+}
+
+.button_secondary {
+  background: transparent;
+  color: var(--logo-light);
+}
+
+.button_secondary:not(:disabled):hover {
+  background: rgba(191, 211, 246, 0.12);
+}
+
+.button_quiet {
+  background: transparent;
+  color: var(--powder);
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: normal;
+}
+
+.feedback {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  border-left: 5px solid var(--ink-2);
+  margin: 12px 0;
+}
+
+.feedback p:last-child {
+  margin-bottom: 0;
+}
+
+.feedbackIcon {
+  font-weight: 700;
+  width: 1.2em;
+  flex: none;
+}
+
+.feedbackLabel {
+  font-weight: 700;
+}
+
+.feedback_wrong {
+  border-left-color: var(--error);
+}
+
+.feedback_wrong .feedbackIcon,
+.feedback_wrong .feedbackLabel {
+  color: var(--error);
+}
+
+.feedback_right {
+  border-left-color: var(--success);
+}
+
+.feedback_right .feedbackIcon,
+.feedback_right .feedbackLabel {
+  color: var(--success);
+}
+
+.verdict {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+}
+
+.verdict_upheld {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.verdict_matches {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.verdict_incomplete,
+.verdict_hold {
+  color: var(--ink);
+  border-style: dashed;
+}

@@ -1,0 +1,129 @@
+.practice {
+  font-size: 0.9rem;
+  color: var(--shell-muted);
+}
+
+.trace {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.legend {
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--rule);
+  cursor: pointer;
+}
+
+.row:last-of-type {
+  border-bottom: 1px solid var(--rule);
+}
+
+.row:hover:not(.locked) {
+  background: rgba(24, 39, 70, 0.05);
+}
+
+.selected {
+  background: rgba(191, 211, 246, 0.55);
+  box-shadow: inset 4px 0 0 var(--ink);
+}
+
+.locked {
+  cursor: default;
+}
+
+.radio {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.stepLabel {
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.work {
+  font-size: 1.15rem;
+}
+
+.struck {
+  text-decoration: line-through;
+  text-decoration-color: var(--error);
+  color: var(--ink-2);
+}
+
+.replayed {
+  grid-column: 3;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--success);
+  animation: reveal 500ms ease-out both;
+}
+
+.replayed::before {
+  content: '↳ replayed ';
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.delay2 {
+  animation-delay: 550ms;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.total {
+  margin: 12px 0 0;
+  text-align: right;
+}
+
+.jobList,
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.jobList dt,
+.facts dt {
+  color: var(--ink-2);
+}
+
+.facts dt {
+  color: var(--shell-muted);
+}
+
+.jobList dd,
+.facts dd {
+  margin: 0;
+}
+
+.mode {
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--shell-muted);
+}

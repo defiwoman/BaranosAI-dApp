@@ -1,0 +1,57 @@
+.page {
+  max-width: 820px;
+}
+
+.title {
+  font-size: 2rem;
+}
+
+.title:focus {
+  outline: none;
+}
+
+.intro,
+.locked,
+.empty {
+  color: var(--shell-muted);
+}
+
+.empty a {
+  display: inline-flex;
+  min-height: var(--tap);
+  align-items: center;
+}
+
+.category {
+  margin-top: 24px;
+}
+
+.catTitle {
+  font-size: 1.1rem;
+  color: var(--powder);
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.entry {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.entry a {
+  color: var(--ink);
+}
+
+.entry h3 {
+  font-size: 1.25rem;
+}
+
+.meta {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  margin: 10px 0 0;
+}
