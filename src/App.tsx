@@ -12,10 +12,11 @@ import { NotebookPage } from './pages/NotebookPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SummaryPage } from './pages/SummaryPage';
 import { CertificatePage } from './pages/CertificatePage';
+import { UseCasePage } from './pages/UseCasePage';
 
-/** Cases and the certificate need a certificate name first. The URL is kept, so the participant lands there afterwards. */
+/** Cases, the use case and the certificate need a certificate name first. The URL is kept, so the participant lands there afterwards. */
 function needsProfile(path: string): boolean {
-  return path.startsWith('/case/') || path === '/certificate';
+  return path.startsWith('/case/') || path === '/certificate' || path === '/use-case';
 }
 
 function pageTitle(path: string): string {
@@ -26,6 +27,7 @@ function pageTitle(path: string): string {
     '/notebook': 'Notebook',
     '/summary': 'Your progress',
     '/certificate': 'Your certificate',
+    '/use-case': 'Your use case',
   };
   return titles[path] ? `${titles[path]} · ${APP_NAME}` : APP_NAME;
 }
@@ -43,6 +45,7 @@ function Route() {
   if (path === '/notebook') return <NotebookPage />;
   if (path === '/summary') return <SummaryPage />;
   if (path === '/certificate') return <CertificatePage />;
+  if (path === '/use-case') return <UseCasePage />;
   const caseMatch = /^\/case\/([^/]+)$/.exec(path);
   if (caseMatch) return <CasePage id={caseMatch[1]} />;
   return <NotFoundPage />;

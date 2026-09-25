@@ -103,7 +103,10 @@ describe('factual boundaries', () => {
     expect(taught).toMatch(/replaying a disputed step/);
     expect(taught).toMatch(/settlement/);
     expect(taught).toMatch(/verified truth|deciding when a result may be used/);
-    expect(CERTIFICATE.body('X')).toMatch(/reproducible AI computation, verification, settlement and the limits of AI conclusions/);
+    expect(CERTIFICATE.body('X')).toBe(
+      'Presented to X in recognition of completing the BaranosAI Educational Quest, demonstrating a foundational understanding of the BaranosAI whitepaper concepts covered in the quest, and applying those concepts through a personal use-case study.',
+    );
+    expect(CERTIFICATE.footnote).toMatch(/not been reviewed, validated or endorsed by the BaranosAI team/);
   });
 
   it('keeps reported claims attributed and dated', () => {

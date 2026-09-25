@@ -13,8 +13,23 @@ Live review deployment: https://baranosaieducationalquest.netlify.app/
 - **Entry form:** a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet.
 - **Six cases:** each has a short scenario, one task, one challenge with unlimited retries and an optional hint, then *Why this matters*, *How BaranosAI helps* and *Your takeaway*, plus an optional *Explore further* section and source links.
 - **Final review (Case 06):** three questions on reproducibility, settlement and the limits of verified results.
-- **Certificate:** unlocked only when all six cases are complete. A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. The certificate is drawn once on a canvas and offered as PNG, as a one-page PDF (the same image) and for printing. It is a browser-generated learning reward, not a tamper-proof credential.
-- **Saved data:** profile, progress and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, with schema version 2. Version 1 saves from the first release are migrated in place: completed cases keep their dates, and a finisher is asked only the one final-review question the old version did not include.
+- **Your use case (final requirement):** after Case 06, a guided five-step form ("Your idea for verifiable AI") with autosaved drafts, an editable review and basic completeness checks (no scoring or approval). Submitting sends it to the quest organiser via Netlify Forms.
+- **Certificate:** unlocked only when all six cases are complete **and** a use case has been received. A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. The certificate is drawn once on a canvas and offered as PNG and as a one-page PDF (the same image). Sharing on X is optional, with an editable post. It is a browser-generated learning reward, not a tamper-proof credential.
+- **Saved data:** profile, progress, use-case draft and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, schema version 3 (curriculum 3). Older saves migrate in place and keep their completed cases. A certificate earned under curriculum 2 (six cases only) is kept and still downloadable; its owner is asked only for the use case to earn the updated certificate.
+
+## Enabling use-case submissions on Netlify
+
+Submissions use [Netlify Forms](https://docs.netlify.com/forms/setup/). The repository already contains everything the code needs:
+
+- `public/__forms.html` holds the static form declaration (`name="use-case"`, `data-netlify="true"`, honeypot `bot-field`, `action="/use-case-received.html"`). Its field names match `FORM_FIELDS` in `src/adapters/submission.ts`, and a test enforces this.
+- The app posts URL-encoded data, including `form-name=use-case`, to `/__forms.html`.
+- `public/use-case-received.html` is the form's action page. The app unlocks the certificate only when the response is that page (it carries a marker), so a bare `200 OK` from a server that didn't store anything is not trusted.
+
+**You must do this once in the Netlify UI:** *Site configuration → Forms → Enable form detection*, then trigger a new deploy. Afterwards the **use-case** form should appear under *Forms*.
+
+To verify on the deployed site, submit one use case from a test profile. Check that it appears in the Netlify Forms dashboard and that the certificate unlocks. If detection is off, the app shows "didn’t confirm it saved your use case" and the certificate stays locked.
+
+Submissions are visible only to site members in the Netlify dashboard. Nothing is published. Netlify's free plan includes a limited number of form submissions per month; check your plan. Optional: add form notifications (email or webhook) under *Forms → Form notifications*.
 
 ## Status
 

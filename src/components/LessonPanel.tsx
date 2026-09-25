@@ -8,10 +8,12 @@ interface Props {
   /** Move focus here when the case has just been solved. */
   focusOnMount: boolean;
   actions: ReactNode;
+  /** Optional closing message shown just above the actions. */
+  finale?: ReactNode;
 }
 
 /** The three short explanations every case ends with, plus optional depth. */
-export function LessonPanel({ lesson, focusOnMount, actions }: Props) {
+export function LessonPanel({ lesson, focusOnMount, actions, finale }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (focusOnMount) heading.current?.focus();
@@ -43,6 +45,7 @@ export function LessonPanel({ lesson, focusOnMount, actions }: Props) {
         <SourceLine refs={lesson.explore.sources} />
       </details>
       <SourceLine refs={lesson.sources} />
+      {finale && <div className={styles.finale}>{finale}</div>}
       <div className={styles.actions}>{actions}</div>
     </section>
   );

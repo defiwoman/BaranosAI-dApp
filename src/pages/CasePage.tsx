@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { caseById, QUEST } from '../content/quest';
 import { CASE_IDS, isCaseId, type CaseId } from '../domain/types';
-import { isCompleted, isUnlocked, missingChecks, nextCase } from '../domain/progress';
+import { certificateEligibility, isCompleted, isUnlocked, missingChecks, nextCase } from '../domain/progress';
 import { useProgress } from '../progressContext';
 import { Link } from '../router';
 import { MiraBrief } from '../components/MiraBrief';
@@ -71,15 +71,25 @@ function CaseView({ id }: { id: CaseId }) {
             <LessonPanel
               lesson={lesson}
               focusOnMount={!replay}
+              finale={
+                !following && !progress.useCase.submission ? (
+                  <p>You’ve solved the cases. Now it’s your turn to imagine what BaranosAI could make possible.</p>
+                ) : undefined
+              }
               actions={
                 following ? (
                   <>
                     <Link to={`/case/${following}`}>Next case</Link>
                     <Link to="/cases">All cases</Link>
                   </>
-                ) : (
+                ) : certificateEligibility(progress).eligible ? (
                   <>
                     <Link to="/certificate">See my certificate</Link>
+                    <Link to="/cases">All cases</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/use-case">Create my use case</Link>
                     <Link to="/cases">All cases</Link>
                   </>
                 )

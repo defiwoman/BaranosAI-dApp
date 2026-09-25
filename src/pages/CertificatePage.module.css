@@ -177,3 +177,74 @@
   font-weight: 700;
   text-decoration: none;
 }
+
+.share,
+.earlier {
+  color-scheme: light;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  margin: 18px 0;
+}
+
+.share h2,
+.earlier h2 {
+  font-size: 1.25rem;
+}
+
+.shareLabel {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.share textarea {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--ink-2);
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.tip {
+  background: #fff;
+  border-left: 4px solid var(--powder);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.share .controls button,
+.share .controls .link,
+.earlier .controls button {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.shareStatus {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.earlierPreview {
+  max-width: 420px;
+}
+
+.earlier .status {
+  color: var(--ink-2);
+}
+
+.earlier .error {
+  color: var(--error);
+}
+
+.note a {
+  color: var(--powder);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}

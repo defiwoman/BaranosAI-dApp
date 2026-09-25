@@ -27,3 +27,9 @@ export const V1_COMPLETION_GRANTS: Record<CaseId, readonly string[]> = {
   '05': REQUIRED_CHECKS['05'],
   '06': ['06-review-settled', '06-review-limits'],
 };
+
+/**
+ * Curriculum versions: 1 = first release (six long cases), 2 = six simplified cases,
+ * 3 = six cases plus a submitted personal use case. Sent with every submission.
+ */
+export const CURRICULUM_VERSION = '3';

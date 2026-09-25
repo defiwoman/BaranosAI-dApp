@@ -104,3 +104,7 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.submitted {
+  margin-top: 12px;
+}

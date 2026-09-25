@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { CASES } from '../content/quest';
 import { useProgress } from '../progressContext';
-import { certificateEligibility, isCompleted, isUnlocked, nextCase } from '../domain/progress';
+import { canWriteUseCase, certificateEligibility, isCompleted, isUnlocked, nextCase } from '../domain/progress';
+import { FINAL_STEP_NOTE, REQUIREMENTS_NOTE, formatDate } from '../content/brand';
 import { Link } from '../router';
 import { QuestProgress } from '../components/QuestProgress';
 import styles from './SummaryPage.module.css';
@@ -30,15 +31,24 @@ export function SummaryPage() {
         <h2 id="cert-heading">Certificate</h2>
         {eligibility.eligible ? (
           <>
-            <p>All six cases are complete. Your certificate is ready.</p>
+            <p>All six cases are complete and your use case was received. Your certificate is ready.</p>
             <Link to="/certificate" className={styles.button}>
               View my certificate
+            </Link>
+          </>
+        ) : canWriteUseCase(progress) ? (
+          <>
+            <p>
+              <strong>{FINAL_STEP_NOTE}</strong>
+            </p>
+            <Link to="/use-case" className={styles.button}>
+              Create my use case
             </Link>
           </>
         ) : (
           <>
             <p>
-              Complete all six cases to earn your personalised certificate.{' '}
+              {REQUIREMENTS_NOTE}{' '}
               {eligibility.remaining.length === 1 ? 'One case to go.' : `${eligibility.remaining.length} cases to go.`}
             </p>
             {next && (
@@ -47,6 +57,12 @@ export function SummaryPage() {
               </Link>
             )}
           </>
+        )}
+        {progress.useCase.submission && (
+          <p className={styles.submitted}>
+            Use case “{progress.useCase.submission.answers.title}” received on{' '}
+            {formatDate(progress.useCase.submission.submittedAt)}. <Link to="/use-case">View it</Link>
+          </p>
         )}
       </section>
 
@@ -76,7 +92,10 @@ export function SummaryPage() {
 
       <section className={styles.reset} aria-labelledby="reset">
         <h2 id="reset">Start over</h2>
-        <p>Resetting removes your saved case progress and certificate from this browser. Your certificate name is kept.</p>
+        <p>
+          Resetting removes your saved case progress, use-case draft and certificate from this browser. Your certificate name is
+          kept. A use case you already submitted stays with the organiser.
+        </p>
         {resetDone && <p role="status">Progress cleared. You can start again from Case 1.</p>}
         {confirmReset ? (
           <div className={styles.actions}>
