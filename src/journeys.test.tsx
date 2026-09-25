@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { renderApp } from './test/renderApp';
 import { STORAGE_KEY } from './adapters/storage';
@@ -7,7 +7,7 @@ import { RECEIVED_MARKER } from './adapters/submission';
 import { QUEST } from './content/quest';
 import { CASE_IDS, type CaseId } from './domain/types';
 import { USE_CASE_FIELDS } from './domain/useCase';
-import { GOOD_DRAFT, v2FinishedSave, v3CasesDone } from './test/fixtures';
+import { GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from './test/fixtures';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -25,20 +25,12 @@ function mockServer(...statuses: (number | 'offline')[]) {
   return { calls, fetchMock };
 }
 
+const label = (id: string) => USE_CASE_FIELDS.find((f) => f.id === id)!.label;
+
 async function fillUseCase(user: UserEvent) {
-  const byId = (id: string) => USE_CASE_FIELDS.find((f) => f.id === id)!.label;
-  await user.type(screen.getByLabelText(byId('title')), GOOD_DRAFT.title);
-  await user.type(screen.getByLabelText(byId('problem')), GOOD_DRAFT.problem);
-  await user.click(screen.getByRole('button', { name: 'Continue' }));
-  await user.type(screen.getByLabelText(byId('aiRole')), GOOD_DRAFT.aiRole);
-  await user.type(screen.getByLabelText(byId('whyVerify')), GOOD_DRAFT.whyVerify);
-  await user.click(screen.getByRole('button', { name: 'Continue' }));
-  await user.type(screen.getByLabelText(byId('agreedRules')), GOOD_DRAFT.agreedRules);
-  await user.type(screen.getByLabelText(byId('risks')), GOOD_DRAFT.risks);
-  await user.click(screen.getByRole('button', { name: 'Continue' }));
-  await user.click(screen.getByRole('checkbox', { name: /Challenging and replaying a disputed step/ }));
-  await user.click(screen.getByRole('checkbox', { name: /Verified execution is not verified truth/ }));
-  await user.click(screen.getByRole('button', { name: 'Continue' }));
+  await user.type(screen.getByLabelText(label('title')), GOOD_DRAFT.title);
+  await user.type(screen.getByLabelText(label('whoAndWhat')), GOOD_DRAFT.whoAndWhat);
+  await user.type(screen.getByLabelText(label('whyVerify')), GOOD_DRAFT.whyVerify);
 }
 
 const saved = () => JSON.parse(localStorage.getItem(STORAGE_KEY)!);
@@ -191,7 +183,7 @@ describe('cases', () => {
     expect(server.calls).toHaveLength(1);
     expect(server.calls[0].get('form-name')).toBe('use-case');
     expect(server.calls[0].get('displayName')).toBe('Maximiliana Alexandrina Konstantinopoulou-Vanderbilt');
-    expect(server.calls[0].get('curriculumVersion')).toBe('3');
+    expect(server.calls[0].get('curriculumVersion')).toBe('3.1');
     for (const control of ['Download certificate — PDF', 'Download certificate — PNG', 'Share achievement on X']) {
       expect(screen.getByRole('button', { name: control })).toBeInTheDocument();
     }
@@ -287,86 +279,124 @@ describe('existing participants', () => {
 });
 
 describe('use case', () => {
+  const ready = (draft = GOOD_DRAFT) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v4CasesDone(draft)));
+
   it('explains the requirement before the quest starts', () => {
     renderApp('/');
     expect(screen.getByText('To earn your certificate, complete all six cases and submit one use case of your own.')).toBeInTheDocument();
   });
 
   it('is only open after the six cases', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v3CasesDone(), passedChecks: ['01-replay'], cases: { '01': { completedAt: new Date().toISOString() } } }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v4CasesDone(), passedChecks: ['01-replay'], cases: { '01': { completedAt: new Date().toISOString() } } }));
     renderApp('/use-case');
     expect(screen.getByRole('heading', { name: 'Solve the six cases first' })).toBeInTheDocument();
   });
 
-  it('rejects empty, whitespace-only and example answers, and keeps the draft across reloads and navigation', async () => {
-    const user = userEvent.setup();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(v3CasesDone()));
+  it('is one short page with three questions, the saved name, one button and a way back', () => {
+    ready({ title: '', whoAndWhat: '', whyVerify: '' });
     renderApp('/use-case');
-    const title = USE_CASE_FIELDS[0];
-    const problem = USE_CASE_FIELDS[1];
-
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getAllByText('Please add a short answer in your own words.')).toHaveLength(2);
-    await waitFor(() => expect(screen.getByLabelText(title.label)).toHaveFocus());
-
-    await user.type(screen.getByLabelText(title.label), '    ');
-    await user.type(screen.getByLabelText(problem.label), problem.example);
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText('Please add a short answer in your own words.')).toBeInTheDocument();
-    expect(screen.getByText('That’s the example. Please describe your own idea.')).toBeInTheDocument();
-    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
-
-    await user.clear(screen.getByLabelText(title.label));
-    await user.type(screen.getByLabelText(title.label), 'Honest harbour');
-    await user.clear(screen.getByLabelText(problem.label));
-    await user.type(screen.getByLabelText(problem.label), 'Boat owners who need fair berths.');
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
-    await user.type(screen.getByLabelText(USE_CASE_FIELDS[2].label), 'Ranks berth requests by rules.');
-
-    // Reload: the draft and the step survive.
-    reload('/use-case');
-    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument();
-    expect(screen.getByLabelText(USE_CASE_FIELDS[2].label)).toHaveValue('Ranks berth requests by rules.');
-    await user.click(screen.getByRole('button', { name: 'Back' }));
-    expect(screen.getByLabelText(title.label)).toHaveValue('Honest harbour');
-
-    // Navigate away (to a lesson) and back: still there.
-    await user.click(screen.getByRole('link', { name: 'Cases' }));
-    await user.click(screen.getByRole('link', { name: 'Progress' }));
-    await user.click(screen.getByRole('link', { name: 'Create my use case' }));
-    expect(screen.getByLabelText(title.label)).toHaveValue('Honest harbour');
+    expect(screen.getByRole('heading', { level: 1, name: 'Your idea for verifiable AI' })).toBeInTheDocument();
+    expect(screen.getByText('Describe one useful application for BaranosAI. A few sentences are enough.')).toBeInTheDocument();
+    expect(screen.getAllByRole('textbox')).toHaveLength(3);
+    expect(screen.queryByLabelText(/Name on your certificate|X handle/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Submitting as/)).toHaveTextContent('Submitting as Rin, from your certificate details.');
+    expect(screen.getAllByRole('button')).toHaveLength(2); // the header's simulation toggle + submit
+    expect(screen.getByRole('button', { name: 'Submit and unlock my certificate' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to cases' })).toHaveAttribute('href', '/cases');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
-  it('keeps answers and the lock when submission fails, then succeeds on retry without a new ID', async () => {
+  it('rejects empty, whitespace-only and example answers, and keeps the draft across reloads and navigation', async () => {
     const user = userEvent.setup();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v3CasesDone(), useCase: { draft: GOOD_DRAFT, step: 4, submissionId: null, submission: null } }));
-    const server = mockServer(500, 'offline', 200);
+    const server = mockServer(200);
+    ready({ title: '', whoAndWhat: '', whyVerify: '' });
     renderApp('/use-case');
-    expect(screen.getByText(GOOD_DRAFT.risks)).toBeInTheDocument();
 
-    const submit = screen.getByRole('button', { name: 'Submit and unlock my certificate' });
-    await user.click(submit);
-    expect(await screen.findByRole('alert')).toHaveTextContent(/error 500.*answers are saved/);
+    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    expect(screen.getAllByText('Please add a short answer in your own words.')).toHaveLength(3);
+    expect(screen.getByLabelText(label('title'))).toHaveFocus();
+    expect(server.fetchMock).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText(label('title')), '   ');
+    await user.type(screen.getByLabelText(label('whoAndWhat')), USE_CASE_FIELDS[1].example);
+    await user.type(screen.getByLabelText(label('whyVerify')), 'Owners can check. Rules may be unfair.');
+    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    expect(screen.getByText('Please add a short answer in your own words.')).toBeInTheDocument();
+    expect(screen.getByText('That’s the example. Please describe your own idea.')).toBeInTheDocument();
+    expect(server.fetchMock).not.toHaveBeenCalled();
+
+    await user.clear(screen.getByLabelText(label('title')));
+    await user.type(screen.getByLabelText(label('title')), 'Honest harbour');
+    reload('/use-case');
+    expect(screen.getByLabelText(label('title'))).toHaveValue('Honest harbour');
+    expect(screen.getByLabelText(label('whyVerify'))).toHaveValue('Owners can check. Rules may be unfair.');
+
+    await user.click(screen.getByRole('link', { name: 'Back to cases' }));
+    await user.click(screen.getByRole('link', { name: 'Progress' }));
+    await user.click(screen.getByRole('link', { name: 'Create my use case' }));
+    expect(screen.getByLabelText(label('title'))).toHaveValue('Honest harbour');
+  });
+
+  it('migrates a five-step draft into the three fields, keeps a backup, and submits the combined text', async () => {
+    const user = userEvent.setup();
+    const server = mockServer(200);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v3WithDraft()));
+    renderApp('/use-case');
+    expect(screen.getByText(/We’ve combined your earlier answers into these three boxes/)).toBeInTheDocument();
+    expect(screen.getByLabelText(label('title'))).toHaveValue(LEGACY_DRAFT.title);
+    expect(screen.getByLabelText(label('whoAndWhat'))).toHaveValue(`${LEGACY_DRAFT.problem}\n\n${LEGACY_DRAFT.aiRole}`);
+    expect(screen.getByLabelText(label('whyVerify'))).toHaveValue(`${LEGACY_DRAFT.whyVerify}\n\n${LEGACY_DRAFT.agreedRules}\n\n${LEGACY_DRAFT.risks}`);
+    expect(saved().useCase.legacyDraft).toEqual(LEGACY_DRAFT);
+    expect(saved().profile).toEqual({ name: 'Rin' });
+
+    await user.type(screen.getByLabelText(label('title')), ' (edited)');
+    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    expect(await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
+    const sent = server.calls[0];
+    expect(sent.get('title')).toBe(`${LEGACY_DRAFT.title} (edited)`);
+    expect(sent.get('whoAndWhat')).toBe(`${LEGACY_DRAFT.problem}\n\n${LEGACY_DRAFT.aiRole}`);
+    expect(sent.get('curriculumVersion')).toBe('3.1');
+    expect(sent.has('problem')).toBe(false);
+    expect(sent.has('concepts')).toBe(false);
+    expect(saved().useCase.legacyDraft).toEqual(LEGACY_DRAFT);
+  });
+
+  it('explains a 404 as submissions not being set up, keeps answers and the lock, then succeeds on retry with the same ID', async () => {
+    const user = userEvent.setup();
+    ready();
+    const server = mockServer(404, 500, 'offline', 200);
+    renderApp('/use-case');
+    const submit = () => user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+
+    await submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Use-case submissions aren’t switched on for this site yet, so your certificate stays locked for now. Your draft is saved in this browser, so nothing is lost.',
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent(/try again in a moment/);
     expect(saved().useCase.submission).toBeNull();
     expect(saved().certificate).toBeNull();
     expect(saved().useCase.draft).toEqual(GOOD_DRAFT);
 
-    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    await submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn’t save your use case \(error 500\).*nothing is lost/);
+    await submit();
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn’t reach the server/);
     reload('/certificate');
     expect(screen.getByRole('heading', { name: 'One final step: submit your own use case to earn your certificate.' })).toBeInTheDocument();
 
     reload('/use-case');
-    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    expect(screen.getByLabelText(label('whyVerify'))).toHaveValue(GOOD_DRAFT.whyVerify);
+    await submit();
     expect(await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
     const ids = server.calls.map((c) => c.get('submissionId'));
+    expect(ids).toHaveLength(4);
     expect(new Set(ids).size).toBe(1);
     expect(saved().useCase.submission.id).toBe(ids[0]);
   });
 
-  it('ignores repeated clicks while a submission is in progress', async () => {
+  it('shows “Submitting…” and ignores repeated clicks while a submission is in progress', async () => {
     const user = userEvent.setup();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v3CasesDone(), useCase: { draft: GOOD_DRAFT, step: 4, submissionId: null, submission: null } }));
+    ready();
     let release!: (r: Response) => void;
     const fetchMock = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
     vi.stubGlobal('fetch', fetchMock);
@@ -380,23 +410,10 @@ describe('use case', () => {
     expect(await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
   });
 
-  it('lets the participant edit from the preview', async () => {
-    const user = userEvent.setup();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v3CasesDone(), useCase: { draft: GOOD_DRAFT, step: 4, submissionId: null, submission: null } }));
-    renderApp('/use-case');
-    await user.click(screen.getByRole('button', { name: `Edit: ${USE_CASE_FIELDS[0].label}` }));
-    const title = screen.getByLabelText(USE_CASE_FIELDS[0].label);
-    await user.clear(title);
-    await user.type(title, 'Clearer berths');
-    await user.click(screen.getByRole('button', { name: 'Save and return to review' }));
-    expect(screen.getByText('Step 5 of 5')).toBeInTheDocument();
-    expect(screen.getByText('Clearer berths')).toBeInTheDocument();
-  });
-
   it('shows the submitted case study and makes sharing optional and editable', async () => {
     const user = userEvent.setup();
     mockServer(200);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v3CasesDone(), useCase: { draft: GOOD_DRAFT, step: 4, submissionId: null, submission: null } }));
+    ready();
     renderApp('/use-case');
     await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
     await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' });
@@ -426,7 +443,7 @@ describe('use case', () => {
     expect(screen.getByText(/You earned this on 24 September 2026/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download earlier certificate — PNG' })).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Create my use case' }));
-    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Your idea for verifiable AI' })).toBeInTheDocument();
   });
 });
 
