@@ -1,5 +1,4 @@
 import type { UseCaseDraft } from '../domain/useCase';
-import { CASES } from '../content/quest';
 
 /**
  * Sends a use case to the quest organiser through Netlify Forms.
@@ -22,12 +21,8 @@ export const FORM_FIELDS = [
   'displayName',
   'xHandle',
   'title',
-  'problem',
-  'aiRole',
+  'whoAndWhat',
   'whyVerify',
-  'agreedRules',
-  'risks',
-  'concepts',
   'curriculumVersion',
   'submittedAt',
 ] as const;
@@ -42,7 +37,6 @@ export interface SubmissionInput {
 }
 
 export function encodeSubmission(input: SubmissionInput): string {
-  const concepts = input.answers.concepts.map((id) => `${id} ${CASES.find((c) => c.id === id)?.title ?? ''}`.trim());
   const fields: Record<(typeof FORM_FIELDS)[number], string> = {
     'form-name': FORM_NAME,
     'bot-field': '',
@@ -50,12 +44,8 @@ export function encodeSubmission(input: SubmissionInput): string {
     displayName: input.displayName,
     xHandle: input.xHandle ? `@${input.xHandle}` : '',
     title: input.answers.title,
-    problem: input.answers.problem,
-    aiRole: input.answers.aiRole,
+    whoAndWhat: input.answers.whoAndWhat,
     whyVerify: input.answers.whyVerify,
-    agreedRules: input.answers.agreedRules,
-    risks: input.answers.risks,
-    concepts: concepts.join('; '),
     curriculumVersion: input.curriculumVersion,
     submittedAt: input.submittedAt,
   };
@@ -63,6 +53,12 @@ export function encodeSubmission(input: SubmissionInput): string {
 }
 
 export type SubmitResult = { ok: true } | { ok: false; error: string };
+
+const DRAFT_KEPT = 'Your draft is saved in this browser, so nothing is lost.';
+
+/** Shown when the site isn't accepting submissions (e.g. Netlify form detection is off). */
+export const NOTICE_NOT_SET_UP = 'Use-case submissions aren’t switched on for this site yet, so your certificate stays locked for now.';
+const NOT_SET_UP = `${NOTICE_NOT_SET_UP} ${DRAFT_KEPT} Please let the quest organiser know; once they’ve enabled submissions you can submit again from this page.`;
 
 /**
  * A submission counts as received only when the response is 2xx AND is the form's action page
@@ -88,23 +84,21 @@ export async function submitUseCase(
     if (res.ok) {
       const text = await res.text();
       if (text.includes(RECEIVED_MARKER)) return { ok: true };
-      return {
-        ok: false,
-        error:
-          'The server answered but didn’t confirm it saved your use case, so your certificate stays locked. Your answers are saved; please try again later.',
-      };
+      return { ok: false, error: NOT_SET_UP };
     }
+    // 404/405: the host has no form handler for this address, i.e. submissions are not set up.
+    if (res.status === 404 || res.status === 405) return { ok: false, error: NOT_SET_UP };
     return {
       ok: false,
-      error: `The quest organiser’s server didn’t accept the submission (error ${res.status}). Your answers are saved, so please try again in a moment.`,
+      error: `The quest organiser’s server couldn’t save your use case (error ${res.status}). ${DRAFT_KEPT} Please try again.`,
     };
   } catch (e) {
     const aborted = e instanceof DOMException && e.name === 'AbortError';
     return {
       ok: false,
       error: aborted
-        ? 'The submission took too long. Your answers are saved; please check your connection and try again.'
-        : 'We couldn’t reach the server. Your answers are saved; please check your connection and try again.',
+        ? `The submission took too long. ${DRAFT_KEPT} Please check your connection and try again.`
+        : `We couldn’t reach the server. ${DRAFT_KEPT} Please check your connection and try again.`,
     };
   } finally {
     clearTimeout(timer);
