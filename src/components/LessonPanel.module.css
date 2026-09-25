@@ -90,3 +90,17 @@
   background: var(--ink);
   color: var(--paper);
 }
+
+.finale {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--cover-navy);
+  color: var(--logo-light);
+  font-family: var(--serif);
+  font-size: 1.2rem;
+}
+
+.finale p {
+  margin: 0;
+}

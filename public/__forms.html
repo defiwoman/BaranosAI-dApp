@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Form declaration</title>
+  </head>
+  <body>
+    <!--
+      Static declaration for Netlify Forms. Netlify registers this form at deploy time; the app
+      posts to this file with the same field names (see src/adapters/submission.ts). After storing
+      a submission Netlify serves the action page, whose marker the app checks for.
+      Submissions are private to the site owner in the Netlify Forms dashboard.
+    -->
+    <form name="use-case" method="POST" action="/use-case-received.html" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="use-case" />
+      <input name="bot-field" />
+      <input name="submissionId" />
+      <input name="displayName" />
+      <input name="xHandle" />
+      <input name="title" />
+      <textarea name="problem"></textarea>
+      <textarea name="aiRole"></textarea>
+      <textarea name="whyVerify"></textarea>
+      <textarea name="agreedRules"></textarea>
+      <textarea name="risks"></textarea>
+      <input name="concepts" />
+      <input name="curriculumVersion" />
+      <input name="submittedAt" />
+    </form>
+  </body>
+</html>

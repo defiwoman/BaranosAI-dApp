@@ -58,3 +58,7 @@
 .status {
   font-weight: 600;
 }
+
+.requirement {
+  color: var(--powder);
+}

@@ -1,9 +1,11 @@
-import { APP_NAME, CERTIFICATE, ISSUER, formatDate } from '../content/brand';
+import { APP_NAME, CERTIFICATE, ISSUER, formatDate, type CertificateVariant } from '../content/brand';
 import { buildImagePdf } from '../domain/pdf';
 
 export interface CertificateData {
   name: string;
   completedAt: string;
+  /** `earlier` reproduces certificates earned before the use-case step was added. */
+  variant?: CertificateVariant;
 }
 
 /** A4 landscape at 300 dpi, so text stays sharp when printed or zoomed. */
@@ -177,7 +179,9 @@ export function drawCertificate(ctx: CanvasRenderingContext2D, data: Certificate
   // Recognition text.
   ctx.fillStyle = INK;
   ctx.font = font('normal', 16.5, SANS);
-  const bodyLines = wrapLines((s) => ctx.measureText(s).width / u, CERTIFICATE.bodyAfterName, 740);
+  const earlier = data.variant === 'earlier';
+  const bodyText = earlier ? CERTIFICATE.earlierBodyAfterName : CERTIFICATE.bodyAfterName;
+  const bodyLines = wrapLines((s) => ctx.measureText(s).width / u, bodyText, 740);
   y = (fitted.lines.length === 1 ? 392 : 406) * u;
   for (const line of bodyLines) {
     ctx.fillText(line, cx, y);
@@ -185,13 +189,15 @@ export function drawCertificate(ctx: CanvasRenderingContext2D, data: Certificate
   }
 
   // Programme and completion details.
-  const detailsY = 540 * u;
+  // Details sit a little below the recognition text, but never lower than the original layout.
+  const detailsY = Math.min(540 * u, y + 40 * u);
   ctx.fillStyle = NAVY;
   ctx.font = font('normal', 20, SERIF);
   ctx.fillText(CERTIFICATE.program, cx, detailsY);
   ctx.fillStyle = INK;
-  ctx.font = font('600', 15.5, SANS);
-  ctx.fillText(`${CERTIFICATE.cases}  ·  Completed on ${formatDate(data.completedAt)}`, cx, detailsY + 30 * u);
+  ctx.font = font('600', earlier ? 15.5 : 14, SANS);
+  const achievements = earlier ? CERTIFICATE.cases : `${CERTIFICATE.cases}  ·  ${CERTIFICATE.useCase}`;
+  ctx.fillText(`${achievements}  ·  Completed on ${formatDate(data.completedAt)}`, cx, detailsY + 30 * u);
 
   ctx.fillStyle = POWDER;
   ctx.fillRect(cx - 220 * u, 598 * u, 440 * u, 1 * u);
@@ -205,7 +211,7 @@ export function drawCertificate(ctx: CanvasRenderingContext2D, data: Certificate
 
   ctx.fillStyle = INK_2;
   ctx.font = font('normal', 11, SANS);
-  ctx.fillText(CERTIFICATE.footnote, cx, 664 * u);
+  ctx.fillText(earlier ? CERTIFICATE.earlierFootnote : CERTIFICATE.footnote, cx, 664 * u);
 }
 
 export async function renderCertificate(data: CertificateData): Promise<HTMLCanvasElement> {

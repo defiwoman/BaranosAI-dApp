@@ -3,6 +3,7 @@ import { useProgress } from '../progressContext';
 import { isCompleted, isUnlocked, nextCase } from '../domain/progress';
 import { Link } from '../router';
 import { QuestProgress } from '../components/QuestProgress';
+import { REQUIREMENTS_NOTE } from '../content/brand';
 import styles from './DirectoryPage.module.css';
 
 export function DirectoryPage() {
@@ -14,6 +15,7 @@ export function DirectoryPage() {
         The six cases
       </h1>
       <QuestProgress progress={progress} />
+      <p className={styles.requirement}>{REQUIREMENTS_NOTE}</p>
       <ol className={styles.list}>
         {CASES.map((c, i) => {
           const done = isCompleted(progress, c.id);
