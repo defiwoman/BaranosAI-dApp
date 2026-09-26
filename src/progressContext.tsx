@@ -19,7 +19,7 @@ interface ProgressValue {
   dismissRecovered: () => void;
   pass: (check: string) => void;
   saveProfile: (profile: Profile) => void;
-  saveDraft: (draft: UseCaseDraft, step: number) => void;
+  saveDraft: (draft: UseCaseDraft) => void;
   setSubmissionId: (id: string) => void;
   recordSubmission: (submission: Submission) => void;
   reset: () => void;
@@ -38,7 +38,7 @@ export function ProgressProvider({ children, storage }: { children: ReactNode; s
 
   const pass = useCallback((check: string) => setProgress((p) => passCheck(p, check)), []);
   const saveProfile = useCallback((profile: Profile) => setProgress((p) => setProfile(p, profile)), []);
-  const saveDraftCb = useCallback((draft: UseCaseDraft, step: number) => setProgress((p) => saveDraft(p, draft, step)), []);
+  const saveDraftCb = useCallback((draft: UseCaseDraft) => setProgress((p) => saveDraft(p, draft)), []);
   const setSubmissionId = useCallback((id: string) => setProgress((p) => withSubmissionId(p, id)), []);
   const record = useCallback((s: Submission) => setProgress((p) => recordSubmission(p, s)), []);
   const reset = useCallback(() => setProgress((p) => resetProgress(p)), []);

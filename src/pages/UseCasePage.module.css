@@ -20,41 +20,6 @@
   color: var(--logo-light);
 }
 
-.small {
-  color: var(--shell-muted);
-}
-
-.steps {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 0 0 14px;
-  padding: 0;
-  font-size: 0.9rem;
-  color: var(--shell-muted);
-}
-
-.steps .num {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-  font-size: 0.8rem;
-  margin-right: 2px;
-}
-
-.stepNow {
-  color: var(--logo-light);
-  font-weight: 700;
-}
-
-.stepDone {
-  color: var(--powder);
-}
-
 .card {
   color-scheme: light;
   background: var(--paper);
@@ -68,35 +33,13 @@
   color: var(--ink);
 }
 
-.stepHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 1.5rem;
-}
-
-.stepHeading:focus {
-  outline: none;
-}
-
-.stepHeading:focus-visible {
-  outline: 3px solid var(--focus);
-}
-
-.stepCount {
-  font-family: var(--sans);
-  font-size: 0.85rem;
-  color: var(--ink-2);
-}
-
 .field {
   display: grid;
   gap: 4px;
   margin: 18px 0;
 }
 
-.field label,
-.concepts legend {
+.field label {
   font-weight: 700;
   font-size: 1.05rem;
 }
@@ -144,56 +87,6 @@
   content: '✕ ';
 }
 
-.concepts {
-  border: 0;
-  padding: 0;
-  margin: 18px 0;
-}
-
-.concept {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 12px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: #fff;
-  padding: 8px 12px;
-  margin-top: 8px;
-}
-
-.concept label {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  cursor: pointer;
-  flex: 1 1 260px;
-  min-height: var(--tap);
-  padding-top: 4px;
-}
-
-.concept input {
-  width: 22px;
-  height: 22px;
-  margin: 2px 0 0;
-  flex: none;
-  accent-color: var(--ink);
-}
-
-.conceptCase {
-  display: block;
-  font-size: 0.9rem;
-  color: var(--ink-2);
-}
-
-.lessonLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap);
-  font-size: 0.9rem;
-}
-
 .answers {
   margin: 0;
 }
@@ -201,40 +94,16 @@
 .answer {
   border-top: 1px solid var(--rule);
   padding: 10px 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 12px;
 }
 
 .answer dt {
   font-weight: 700;
-  grid-column: 1;
 }
 
 .answer dd {
   margin: 0;
-  grid-column: 1;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.answer dd ul {
-  margin: 0;
-  padding-left: 1.1em;
-}
-
-.edit {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 1px solid var(--ink);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
 }
 
 .notice {
@@ -261,8 +130,7 @@
   margin-top: 18px;
 }
 
-.primary,
-.secondary {
+.primary {
   min-height: 48px;
   padding: 0 22px;
   border-radius: var(--radius);
@@ -270,9 +138,6 @@
   font-weight: 700;
   cursor: pointer;
   border: 1px solid var(--ink);
-}
-
-.primary {
   background: var(--ink);
   color: var(--paper);
 }
@@ -280,11 +145,6 @@
 .primary:disabled {
   opacity: 0.7;
   cursor: progress;
-}
-
-.secondary {
-  background: transparent;
-  color: var(--ink);
 }
 
 .saved {
@@ -312,4 +172,27 @@
 .card .primaryLink {
   background: var(--ink);
   color: var(--paper) !important;
+}
+
+.migrated {
+  background: #fff;
+  border-left: 4px solid var(--success);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.who {
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.who strong {
+  color: var(--ink);
+}
+
+.saved a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  margin-left: 6px;
 }

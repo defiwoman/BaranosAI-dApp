@@ -1,18 +1,24 @@
-import type { CaseId } from './types';
-import { CASE_IDS, isCaseId } from './types';
+import { isCaseId, type CaseId } from './types';
 
 /** The participant's own BaranosAI use case: the final requirement for the certificate. */
 
-export type UseCaseField = 'title' | 'problem' | 'aiRole' | 'whyVerify' | 'agreedRules' | 'risks';
+export type UseCaseField = 'title' | 'whoAndWhat' | 'whyVerify';
 
+/** Three short answers. The name and X handle come from the participant's profile. */
 export interface UseCaseDraft {
+  title: string;
+  whoAndWhat: string;
+  whyVerify: string;
+}
+
+/** The earlier five-step draft (curriculum 3.0), kept as a backup after migration. */
+export interface LegacyDraft {
   title: string;
   problem: string;
   aiRole: string;
   whyVerify: string;
   agreedRules: string;
   risks: string;
-  /** Lessons the participant links their idea to. */
   concepts: CaseId[];
 }
 
@@ -20,164 +26,128 @@ export interface FieldSpec {
   id: UseCaseField;
   label: string;
   help: string;
-  /** A short illustration shown as helper text, never inserted into the answer. */
+  /** A brief illustration shown as helper text, never inserted into the answer. */
   example: string;
   multiline: boolean;
-  min: number;
   max: number;
 }
 
 export const USE_CASE_FIELDS: FieldSpec[] = [
   {
     id: 'title',
-    label: 'Give your idea a name.',
-    help: 'A few words is plenty.',
+    label: 'Name your idea',
+    help: 'A short title.',
     example: 'e.g. “Fair grant checker”',
     multiline: false,
-    min: 3,
     max: 80,
   },
   {
-    id: 'problem',
-    label: 'Who would it help, and what problem would it solve?',
-    help: 'One or two sentences in your own words.',
-    example: 'e.g. a local council that needs applicants to trust how their applications were scored.',
+    id: 'whoAndWhat',
+    label: 'Who would it help, and what would the AI do?',
+    help: 'Two or three sentences covering the problem and the AI’s task.',
+    example: 'e.g. A local council scores grant applications. The AI would rate each one against a published checklist.',
     multiline: true,
-    min: 15,
-    max: 600,
-  },
-  {
-    id: 'aiRole',
-    label: 'What would the AI do?',
-    help: 'Describe the AI’s job simply. No technical detail needed.',
-    example: 'e.g. read each application and score it against a published checklist.',
-    multiline: true,
-    min: 15,
-    max: 600,
+    max: 1500,
   },
   {
     id: 'whyVerify',
-    label: 'Why would verifying its computation matter?',
-    help: 'Think about Case 01: who would want to check the work, and what happens if a step goes wrong?',
-    example: 'e.g. a rejected applicant could challenge a score instead of just trusting it.',
+    label: 'Why does verification matter?',
+    help: 'One or two sentences explaining what needs checking and one limitation that would remain.',
+    example: 'e.g. Applicants could challenge a score step by step. The checklist itself could still be unfair.',
     multiline: true,
-    min: 15,
-    max: 600,
+    max: 2500,
   },
-  {
-    id: 'agreedRules',
-    label: 'What evidence and rules would need to be agreed beforehand?',
-    help: 'Think about Case 02: the model, the evidence and the settings.',
-    example: 'e.g. which model version, the application documents, and the scoring checklist.',
-    multiline: true,
-    min: 15,
-    max: 600,
-  },
-  {
-    id: 'risks',
-    label: 'What could still go wrong, even if the computation is verified?',
-    help: 'Think about Cases 04 and 05: evidence quality, the model’s judgement, hidden instructions.',
-    example: 'e.g. an applicant could upload misleading documents, or the checklist itself could be unfair.',
-    multiline: true,
-    min: 15,
-    max: 600,
-  },
-];
-
-/** Form steps: a couple of questions each, then concepts, then the editable preview. */
-export const USE_CASE_STEPS: { id: string; title: string; fields: UseCaseField[] }[] = [
-  { id: 'idea', title: 'Your idea', fields: ['title', 'problem'] },
-  { id: 'ai', title: 'The AI and why checking matters', fields: ['aiRole', 'whyVerify'] },
-  { id: 'rules', title: 'Rules and limits', fields: ['agreedRules', 'risks'] },
-  { id: 'concepts', title: 'What you learned', fields: [] },
-  { id: 'preview', title: 'Review and submit', fields: [] },
 ];
 
 export function emptyDraft(): UseCaseDraft {
-  return { title: '', problem: '', aiRole: '', whyVerify: '', agreedRules: '', risks: '', concepts: [] };
+  return { title: '', whoAndWhat: '', whyVerify: '' };
 }
 
 const normaliseText = (s: string) => s.normalize('NFC').replace(/\s+/g, ' ').trim();
 const stripExample = (s: string) => normaliseText(s.replace(/^e\.g\.\s*/i, '').replace(/[“”"]/g, '')).toLowerCase();
 
 /**
- * Basic completeness checks, not scoring. Rejects empty and whitespace-only answers,
- * answers that just repeat the example or the question, and text too short to carry an idea.
+ * Basic completeness checks, not scoring: an answer must not be empty or whitespace-only,
+ * must not just repeat the example or the question, and must contain words. No minimum essay length.
  */
 export function validateField(spec: FieldSpec, raw: string): string | null {
   const value = normaliseText(raw);
   if (value === '') return 'Please add a short answer in your own words.';
-  const lower = value.toLowerCase().replace(/[“”"]/g, '');
-  if (stripExample(value) === stripExample(spec.example)) {
-    return 'That’s the example. Please describe your own idea.';
-  }
+  if (stripExample(value) === stripExample(spec.example)) return 'That’s the example. Please describe your own idea.';
+  const lower = value.toLowerCase();
   if (lower === normaliseText(spec.label).toLowerCase() || lower === normaliseText(spec.help).toLowerCase()) {
     return 'Please answer the question rather than repeating it.';
   }
-  if (Array.from(value).length < spec.min) {
-    return spec.min <= 3 ? 'Please give your idea a name of at least 3 characters.' : 'Please add a little more, one short sentence is enough.';
-  }
-  if ((value.match(/\p{L}/gu) ?? []).length < Math.min(3, spec.min)) return 'Please use words to describe your idea.';
-  if (Array.from(value).length > spec.max) return `Please keep this under ${spec.max} characters.`;
+  if (!/\p{L}/u.test(value)) return 'Please use words to describe your idea.';
+  if (Array.from(raw.trim()).length > spec.max) return `Please keep this under ${spec.max} characters.`;
   return null;
 }
 
-export function validateConcepts(concepts: CaseId[]): string | null {
-  return concepts.length === 0 ? 'Choose at least one lesson that connects to your idea.' : null;
-}
-
-export type DraftErrors = Partial<Record<UseCaseField | 'concepts', string>>;
-
-export function validateStep(stepIndex: number, draft: UseCaseDraft): DraftErrors {
-  const step = USE_CASE_STEPS[stepIndex];
-  const errors: DraftErrors = {};
-  for (const id of step.fields) {
-    const spec = USE_CASE_FIELDS.find((f) => f.id === id)!;
-    const e = validateField(spec, draft[id]);
-    if (e) errors[id] = e;
-  }
-  if (step.id === 'concepts') {
-    const e = validateConcepts(draft.concepts);
-    if (e) errors.concepts = e;
-  }
-  return errors;
-}
+export type DraftErrors = Partial<Record<UseCaseField, string>>;
 
 export function validateDraft(draft: UseCaseDraft): DraftErrors {
-  return USE_CASE_STEPS.reduce<DraftErrors>((acc, _, i) => ({ ...acc, ...validateStep(i, draft) }), {});
+  const errors: DraftErrors = {};
+  for (const spec of USE_CASE_FIELDS) {
+    const e = validateField(spec, draft[spec.id]);
+    if (e) errors[spec.id] = e;
+  }
+  return errors;
 }
 
 export function isDraftComplete(draft: UseCaseDraft): boolean {
   return Object.keys(validateDraft(draft)).length === 0;
 }
 
-/** The first step with a problem, so the preview can send the participant straight there. */
-export function firstInvalidStep(draft: UseCaseDraft): number | null {
-  const i = USE_CASE_STEPS.findIndex((_, idx) => Object.keys(validateStep(idx, draft)).length > 0);
-  return i < 0 ? null : i;
+export function cleanDraft(draft: UseCaseDraft): UseCaseDraft {
+  return { title: normaliseText(draft.title), whoAndWhat: draft.whoAndWhat.trim(), whyVerify: draft.whyVerify.trim() };
 }
 
-export function cleanDraft(draft: UseCaseDraft): UseCaseDraft {
+const joinParagraphs = (...parts: string[]) =>
+  parts
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join('\n\n');
+
+/**
+ * Folds the five-step draft into the three fields without losing any text: the title stays,
+ * problem + AI task become field 2, and verification + agreed rules + limitations become field 3,
+ * separated by blank lines so they stay readable and editable.
+ */
+export function migrateLegacyDraft(legacy: LegacyDraft): UseCaseDraft {
   return {
-    title: normaliseText(draft.title),
-    problem: draft.problem.trim(),
-    aiRole: draft.aiRole.trim(),
-    whyVerify: draft.whyVerify.trim(),
-    agreedRules: draft.agreedRules.trim(),
-    risks: draft.risks.trim(),
-    concepts: CASE_IDS.filter((id) => draft.concepts.includes(id)),
+    title: legacy.title.trim(),
+    whoAndWhat: joinParagraphs(legacy.problem, legacy.aiRole),
+    whyVerify: joinParagraphs(legacy.whyVerify, legacy.agreedRules, legacy.risks),
   };
 }
 
-/** Parses a stored draft; returns null if it is not a valid draft shape. */
+export function legacyHasContent(legacy: LegacyDraft): boolean {
+  return [legacy.title, legacy.problem, legacy.aiRole, legacy.whyVerify, legacy.agreedRules, legacy.risks].some((v) => v.trim() !== '') || legacy.concepts.length > 0;
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Parses a stored three-field draft. */
 export function parseDraft(value: unknown): UseCaseDraft | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const v = value as Record<string, unknown>;
-  const fields: UseCaseField[] = ['title', 'problem', 'aiRole', 'whyVerify', 'agreedRules', 'risks'];
-  if (!fields.every((f) => typeof v[f] === 'string' && (v[f] as string).length <= 2000)) return null;
-  if (!Array.isArray(v.concepts) || !v.concepts.every(isCaseId)) return null;
-  const draft = emptyDraft();
-  for (const f of fields) draft[f] = v[f] as string;
-  draft.concepts = [...new Set(v.concepts as CaseId[])];
-  return draft;
+  if (!isObject(value)) return null;
+  const fields: UseCaseField[] = ['title', 'whoAndWhat', 'whyVerify'];
+  if (!fields.every((f) => typeof value[f] === 'string' && (value[f] as string).length <= 6000)) return null;
+  return { title: value.title as string, whoAndWhat: value.whoAndWhat as string, whyVerify: value.whyVerify as string };
+}
+
+/** Parses a stored five-step draft from curriculum 3.0. */
+export function parseLegacyDraft(value: unknown): LegacyDraft | null {
+  if (!isObject(value)) return null;
+  const fields = ['title', 'problem', 'aiRole', 'whyVerify', 'agreedRules', 'risks'] as const;
+  if (!fields.every((f) => typeof value[f] === 'string' && (value[f] as string).length <= 2000)) return null;
+  if (!Array.isArray(value.concepts) || !value.concepts.every(isCaseId)) return null;
+  return {
+    title: value.title as string,
+    problem: value.problem as string,
+    aiRole: value.aiRole as string,
+    whyVerify: value.whyVerify as string,
+    agreedRules: value.agreedRules as string,
+    risks: value.risks as string,
+    concepts: [...new Set(value.concepts as CaseId[])],
+  };
 }

@@ -1,9 +1,18 @@
 import { CASE_IDS, isCaseId, type CaseId } from './types';
 import { CURRICULUM_VERSION, REQUIRED_CHECKS, V1_COMPLETION_GRANTS } from './curriculum';
 import { validateName, validateXHandle, type Profile } from './profile';
-import { emptyDraft, isDraftComplete, parseDraft, USE_CASE_STEPS, type UseCaseDraft } from './useCase';
+import {
+  emptyDraft,
+  isDraftComplete,
+  legacyHasContent,
+  migrateLegacyDraft,
+  parseDraft,
+  parseLegacyDraft,
+  type LegacyDraft,
+  type UseCaseDraft,
+} from './useCase';
 
-export const PROGRESS_VERSION = 3;
+export const PROGRESS_VERSION = 4;
 
 export interface CaseRecord {
   /** When the case first became complete. */
@@ -16,12 +25,15 @@ export interface Submission {
   submittedAt: string;
   curriculumVersion: string;
   answers: UseCaseDraft;
+  /** For submissions made with the earlier five-step form: exactly what was sent. */
+  legacyAnswers?: LegacyDraft;
 }
 
 export interface UseCaseState {
   /** Autosaved as the participant types, and kept if a submission fails. */
   draft: UseCaseDraft;
-  step: number;
+  /** Backup of a five-step draft (curriculum 3.0) that was folded into `draft`. Never discarded. */
+  legacyDraft: LegacyDraft | null;
   /** Generated on the first attempt and reused on retries, so the organiser can spot duplicates. */
   submissionId: string | null;
   submission: Submission | null;
@@ -43,7 +55,7 @@ export interface Progress {
 export type Rank = 'Observer' | 'Investigator' | 'Challenger';
 
 export function emptyUseCase(): UseCaseState {
-  return { draft: emptyDraft(), step: 0, submissionId: null, submission: null };
+  return { draft: emptyDraft(), legacyDraft: null, submissionId: null, submission: null };
 }
 
 export function emptyProgress(): Progress {
@@ -80,7 +92,8 @@ export function parseProgress(raw: string | null): ParseResult {
   let progress: Progress | null;
   if (data.version === 1) progress = migrateV1(data);
   else if (data.version === 2) progress = migrateV2(data);
-  else if (data.version === PROGRESS_VERSION) progress = parseV3(data);
+  else if (data.version === 3) progress = parseStored(data, parseUseCaseV3);
+  else if (data.version === PROGRESS_VERSION) progress = parseStored(data, parseUseCaseV4);
   else return { ok: false, reason: typeof data.version === 'number' ? 'unsupported_version' : 'malformed' };
   if (!progress) return { ok: false, reason: 'malformed' };
   return data.version === PROGRESS_VERSION ? { ok: true, progress } : { ok: true, progress, migratedFrom: data.version as number };
@@ -116,28 +129,75 @@ function parseCertificate(value: unknown, fallbackVersion: string): Progress['ce
   return { completedAt: value.completedAt, curriculumVersion: version };
 }
 
-function parseUseCase(value: unknown): UseCaseState | null {
-  if (!isObject(value)) return null;
-  const draft = parseDraft(value.draft);
-  if (!draft || !Number.isInteger(value.step)) return null;
-  const step = Math.min(Math.max(value.step as number, 0), USE_CASE_STEPS.length - 1);
-  if (value.submissionId !== null && !isId(value.submissionId)) return null;
-  let submission: Submission | null = null;
-  if (value.submission !== null) {
-    const s = value.submission;
-    if (!isObject(s) || !isId(s.id) || !isDate(s.submittedAt) || typeof s.curriculumVersion !== 'string') return null;
-    const answers = parseDraft(s.answers);
-    if (!answers || !isDraftComplete(answers)) return null;
-    submission = { id: s.id, submittedAt: s.submittedAt, curriculumVersion: s.curriculumVersion, answers };
-  }
-  return { draft, step, submissionId: value.submissionId as string | null, submission };
+function parseSubmissionMeta(s: unknown): { id: string; submittedAt: string; curriculumVersion: string } | null {
+  if (!isObject(s) || !isId(s.id) || !isDate(s.submittedAt) || typeof s.curriculumVersion !== 'string') return null;
+  return { id: s.id, submittedAt: s.submittedAt, curriculumVersion: s.curriculumVersion };
 }
 
-function parseV3(d: Record<string, unknown>): Progress | null {
+function parseSubmissionId(v: unknown): string | null | undefined {
+  if (v === null) return null;
+  return isId(v) ? v : undefined;
+}
+
+/** v4: three-field draft, optional legacy backup. */
+function parseUseCaseV4(value: unknown): UseCaseState | null {
+  if (!isObject(value)) return null;
+  const draft = parseDraft(value.draft);
+  const submissionId = parseSubmissionId(value.submissionId);
+  if (!draft || submissionId === undefined) return null;
+  let legacyDraft: LegacyDraft | null = null;
+  if (value.legacyDraft !== null && value.legacyDraft !== undefined) {
+    legacyDraft = parseLegacyDraft(value.legacyDraft);
+    if (!legacyDraft) return null;
+  }
+  let submission: Submission | null = null;
+  if (value.submission !== null) {
+    const meta = parseSubmissionMeta(value.submission);
+    const answers = meta && parseDraft((value.submission as Record<string, unknown>).answers);
+    if (!meta || !answers || !isDraftComplete(answers)) return null;
+    submission = { ...meta, answers };
+    const legacyAnswers = (value.submission as Record<string, unknown>).legacyAnswers;
+    if (legacyAnswers !== undefined) {
+      const parsed = parseLegacyDraft(legacyAnswers);
+      if (!parsed) return null;
+      submission.legacyAnswers = parsed;
+    }
+  }
+  return { draft, legacyDraft, submissionId, submission };
+}
+
+/**
+ * v3: the five-step draft. Its text is folded into the three fields (nothing dropped) and the
+ * original is kept as `legacyDraft`. A submission already received keeps its date and ID, and
+ * its original answers are kept alongside the combined text.
+ */
+function parseUseCaseV3(value: unknown): UseCaseState | null {
+  if (!isObject(value)) return null;
+  const legacy = parseLegacyDraft(value.draft);
+  const submissionId = parseSubmissionId(value.submissionId);
+  if (!legacy || submissionId === undefined) return null;
+  let submission: Submission | null = null;
+  if (value.submission !== null) {
+    const meta = parseSubmissionMeta(value.submission);
+    const legacyAnswers = meta && parseLegacyDraft((value.submission as Record<string, unknown>).answers);
+    if (!meta || !legacyAnswers) return null;
+    const answers = migrateLegacyDraft(legacyAnswers);
+    if (!isDraftComplete(answers)) return null;
+    submission = { ...meta, answers, legacyAnswers };
+  }
+  return {
+    draft: migrateLegacyDraft(legacy),
+    legacyDraft: legacyHasContent(legacy) ? legacy : null,
+    submissionId,
+    submission,
+  };
+}
+
+function parseStored(d: Record<string, unknown>, parseUseCase: (v: unknown) => UseCaseState | null): Progress | null {
   const profile = parseProfile(d.profile);
   const cases = parseCases(d.cases);
   const useCase = parseUseCase(d.useCase);
-  const certificate = parseCertificate(d.certificate, CURRICULUM_VERSION);
+  const certificate = parseCertificate(d.certificate, '3');
   const earlierCertificate = parseCertificate(d.earlierCertificate, '2');
   if (profile === undefined || !cases || !useCase || certificate === undefined || earlierCertificate === undefined) return null;
   if (!isStringArray(d.passedChecks)) return null;
@@ -234,10 +294,9 @@ export function resetProgress(progress: Progress): Progress {
   return { ...emptyProgress(), profile: progress.profile };
 }
 
-/** Autosaves the use-case draft and the step the participant is on. */
-export function saveDraft(progress: Progress, draft: UseCaseDraft, step: number): Progress {
-  const clamped = Math.min(Math.max(step, 0), USE_CASE_STEPS.length - 1);
-  return { ...progress, useCase: { ...progress.useCase, draft, step: clamped } };
+/** Autosaves the use-case draft. */
+export function saveDraft(progress: Progress, draft: UseCaseDraft): Progress {
+  return { ...progress, useCase: { ...progress.useCase, draft } };
 }
 
 /** Reuses the pending submission ID, or stores the new one. */

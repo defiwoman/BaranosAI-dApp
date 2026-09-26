@@ -18,7 +18,8 @@ import {
 import { CASE_IDS } from './types';
 import { emptyDraft } from './useCase';
 import { loadProgress, saveProgress, STORAGE_KEY } from '../adapters/storage';
-import { ALL_CHECKS, GOOD_DRAFT, v2FinishedSave, v3CasesDone } from '../test/fixtures';
+import { ALL_CHECKS, GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from '../test/fixtures';
+import { migrateLegacyDraft } from './useCase';
 
 const t = (day: number) => new Date(Date.UTC(2026, 8, day, 12));
 
@@ -36,7 +37,7 @@ const v1Save = (ids: string[]) =>
     achievements: [],
   });
 
-describe('progress v3', () => {
+describe('progress v4', () => {
   it('completes a case only when all its checks pass, and records the date once', () => {
     let p = passCheck(emptyProgress(), '06-review-reproduce', t(24));
     expect(isCompleted(p, '06')).toBe(false);
@@ -55,7 +56,7 @@ describe('progress v3', () => {
 
   it('round-trips through JSON, including the draft and submission', () => {
     let p = passAll(setProfile(emptyProgress(), { name: 'Zoë 李', xHandle: 'zoe_1' }));
-    p = saveDraft(p, { ...GOOD_DRAFT, risks: '' }, 2);
+    p = saveDraft(p, { ...GOOD_DRAFT, whyVerify: '' });
     expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
     p = recordSubmission(withSubmissionId(p, 'sub-12345678'), submission(26), t(26));
     expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
@@ -111,7 +112,7 @@ describe('the use-case requirement', () => {
 
   it('refuses to record an incomplete use case', () => {
     const p = passAll(emptyProgress());
-    expect(() => recordSubmission(p, { ...submission(26), answers: { ...GOOD_DRAFT, risks: '   ' } })).toThrow();
+    expect(() => recordSubmission(p, { ...submission(26), answers: { ...GOOD_DRAFT, whyVerify: '   ' } })).toThrow();
   });
 
   it('keeps one submission ID across retries', () => {
@@ -120,7 +121,7 @@ describe('the use-case requirement', () => {
   });
 
   it('cannot be unlocked by hand-editing the certificate field', () => {
-    const forged = { ...v3CasesDone(), certificate: { completedAt: t(1).toISOString(), curriculumVersion: '3' } };
+    const forged = { ...v4CasesDone(), certificate: { completedAt: t(1).toISOString(), curriculumVersion: '3' } };
     const r = parseProgress(JSON.stringify(forged));
     expect(r.ok && certificateEligibility(r.progress).eligible).toBe(false);
   });
@@ -140,6 +141,35 @@ describe('migrations', () => {
     expect(done.earlierCertificate).toEqual({ completedAt: t(24).toISOString(), curriculumVersion: '2' });
   });
 
+  it('v3: folds a five-step draft into three fields and keeps the original as a backup', () => {
+    const r = parseProgress(JSON.stringify(v3WithDraft()));
+    expect(r.ok && r.migratedFrom).toBe(3);
+    if (!r.ok) return;
+    expect(r.progress.useCase.draft).toEqual(migrateLegacyDraft(LEGACY_DRAFT));
+    expect(r.progress.useCase.legacyDraft).toEqual(LEGACY_DRAFT);
+    expect(r.progress.profile).toEqual({ name: 'Rin' });
+    expect(CASE_IDS.every((id) => isCompleted(r.progress, id))).toBe(true);
+    expect(certificateEligibility(r.progress)).toMatchObject({ eligible: false, needsUseCase: true });
+    // Reload after migration: stable.
+    expect(parseProgress(JSON.stringify(r.progress))).toEqual({ ok: true, progress: r.progress });
+  });
+
+  it('v3: keeps an already-received submission, its certificate date and original answers', () => {
+    const save = v3WithDraft();
+    const sub = { id: 'sub-12345678', submittedAt: t(25).toISOString(), curriculumVersion: '3', answers: LEGACY_DRAFT };
+    const r = parseProgress(JSON.stringify({ ...save, useCase: { ...save.useCase, submission: sub }, certificate: { completedAt: t(25).toISOString(), curriculumVersion: '3' } }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.progress.useCase.submission).toEqual({ ...sub, answers: migrateLegacyDraft(LEGACY_DRAFT), legacyAnswers: LEGACY_DRAFT });
+    expect(certificateEligibility(r.progress)).toMatchObject({ eligible: true, completedAt: t(25).toISOString() });
+  });
+
+  it('v3: an empty five-step draft migrates without a backup', () => {
+    const empty = { title: '', problem: '', aiRole: '', whyVerify: '', agreedRules: '', risks: '', concepts: [] };
+    const r = parseProgress(JSON.stringify(v3WithDraft(empty)));
+    expect(r.ok && r.progress.useCase).toMatchObject({ draft: { title: '', whoAndWhat: '', whyVerify: '' }, legacyDraft: null });
+  });
+
   it('v1: keeps completed cases; a finisher still needs one review question and the use case', () => {
     const r = parseProgress(v1Save(['01', '02', '03', '04', '05', '06']));
     expect(r.ok && r.migratedFrom).toBe(1);
@@ -153,7 +183,7 @@ describe('migrations', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2FinishedSave()));
     const loaded = loadProgress(localStorage);
     expect(loaded.migrated).toBe(true);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(3);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(4);
     expect(loadProgress(localStorage)).toEqual({ progress: loaded.progress, recovered: false, migrated: false });
   });
 });
