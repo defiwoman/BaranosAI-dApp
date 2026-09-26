@@ -1,0 +1,162 @@
+.bara {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 25;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.bara > * {
+  pointer-events: auto;
+}
+
+.bubble {
+  width: min(300px, calc(100vw - 96px));
+  background: rgba(14, 19, 29, 0.97);
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.name {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin: 0 0 4px;
+}
+
+.text {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.hint {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--powder);
+  cursor: pointer;
+}
+
+.hint:hover {
+  border-color: var(--accent);
+}
+
+.coreButton {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: radial-gradient(circle at 50% 50%, #101728, #07090e 70%);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* The core: a small geometric node echoing the logo's pale-blue circle. */
+.core {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #eef4ff, var(--powder) 55%, #6f93d6);
+  box-shadow: 0 0 10px rgba(143, 180, 255, 0.55);
+  animation: breathe 3.2s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(143, 180, 255, 0.35);
+}
+
+.pulse .ring {
+  animation: ring 700ms ease-out;
+}
+
+.frag {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--powder);
+  border-radius: 1px;
+  top: 50%;
+  left: 50%;
+  opacity: 0.7;
+  animation: orbit 6s linear infinite;
+}
+
+.frag:nth-child(3) {
+  animation-delay: -2s;
+}
+
+.frag:nth-child(4) {
+  animation-delay: -4s;
+}
+
+@keyframes breathe {
+  50% {
+    box-shadow: 0 0 16px rgba(143, 180, 255, 0.8);
+  }
+}
+
+@keyframes ring {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(15px);
+  }
+  to {
+    transform: rotate(360deg) translateX(15px);
+  }
+}
+
+@media (max-width: 600px) {
+  .bara {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .coreButton {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.coreButton {
+  position: relative;
+}
+
+.unread {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}

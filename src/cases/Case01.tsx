@@ -26,10 +26,19 @@ function feedbackText(f: Case01Feedback): { tone: 'wrong' | 'right' | 'info'; te
 }
 
 /** Case 01’s challenge: a toy three-step calculation. The first round is always the casebook job (25 → 23). */
-export function Case01Challenge({ onPass }: ChallengeProps) {
+export function Case01Challenge({ onPass, onWrong, onSolved, onEvent }: ChallengeProps) {
   const [round, setRound] = useState(0);
   const fixture = round === 0 ? CASE01_PRIMARY : CASE01_PRACTICE[(round - 1) % CASE01_PRACTICE.length];
-  return <Round key={round} fixture={fixture} practice={round > 0} onPass={onPass} onPractice={() => setRound((r) => r + 1)} />;
+  return (
+    <Round
+      key={round}
+      fixture={fixture}
+      practice={round > 0}
+      onPass={onPass}
+      hooks={{ onWrong, onSolved, onEvent }}
+      onPractice={() => setRound((r) => r + 1)}
+    />
+  );
 }
 
 function Round({
@@ -37,11 +46,13 @@ function Round({
   practice,
   onPass,
   onPractice,
+  hooks,
 }: {
   fixture: Case01Fixture;
   practice: boolean;
   onPass: (check: string) => void;
   onPractice: () => void;
+  hooks: Pick<ChallengeProps, 'onWrong' | 'onSolved' | 'onEvent'>;
 }) {
   // Skip the briefing phase: the scenario above already sets the scene.
   const [state, dispatch] = useReducer(case01Reducer, fixture, (f) =>
@@ -53,8 +64,27 @@ function Round({
     if (state.phase === 'resolved' && !reported.current && !practice) {
       reported.current = true;
       onPass('01-replay');
+      hooks.onEvent?.('Disputed step isolated', 'ok');
+      hooks.onSolved?.();
     }
-  }, [state.phase, practice, onPass]);
+  }, [state.phase, practice, onPass, hooks]);
+
+  // Report wrong flags and accepted challenges to the console (log + BARA).
+  const wrongSeen = useRef(0);
+  useEffect(() => {
+    if (state.wrongChoices > wrongSeen.current) {
+      wrongSeen.current = state.wrongChoices;
+      hooks.onWrong?.();
+    }
+  }, [state.wrongChoices, hooks]);
+  const acceptedLogged = useRef(false);
+  useEffect(() => {
+    if (state.phase === 'replay_available' && !acceptedLogged.current) {
+      acceptedLogged.current = true;
+      hooks.onEvent?.('Challenge submitted', 'info');
+    }
+    if (state.phase !== 'replay_available' && state.phase !== 'resolved') acceptedLogged.current = false;
+  }, [state.phase, hooks]);
 
   const { job } = state;
   const feedback = state.feedback ? feedbackText(state.feedback) : null;
@@ -88,7 +118,7 @@ function Round({
               </Button>
             ) : (
               <Button variant="primary" aria-disabled={state.selected === null} onClick={() => dispatch({ type: 'CHALLENGE' })}>
-                Challenge this step
+                Flag this step
               </Button>
             )}
             <Button onClick={() => dispatch({ type: 'ACCEPT_SUBMITTED' })}>

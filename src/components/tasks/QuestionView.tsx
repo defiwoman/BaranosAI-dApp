@@ -7,6 +7,8 @@ interface Props {
   question: Question;
   /** Called once when the correct option is submitted. */
   onCorrect: () => void;
+  /** Called each time a wrong option is submitted. */
+  onWrong?: () => void;
   /** Shown after a correct answer when more questions follow. */
   next?: { label: string; onClick: () => void };
   /** e.g. "Question 1 of 3". */
@@ -14,7 +16,7 @@ interface Props {
 }
 
 /** One multiple-choice question: unlimited retries, an optional hint, and an explanation for every option. */
-export function QuestionView({ question, onCorrect, next, label }: Props) {
+export function QuestionView({ question, onCorrect, onWrong, next, label }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [result, setResult] = useState<ChoiceResult | null>(null);
   const [prompted, setPrompted] = useState(false);
@@ -31,6 +33,7 @@ export function QuestionView({ question, onCorrect, next, label }: Props) {
     setResult(r);
     setPrompted(false);
     if (r.correct) onCorrect();
+    else onWrong?.();
   };
 
   return (
@@ -64,7 +67,7 @@ export function QuestionView({ question, onCorrect, next, label }: Props) {
       <div className={styles.actions}>
         {!solved && (
           <button type="button" className={styles.primary} onClick={submit}>
-            Check my answer
+            Submit finding
           </button>
         )}
         {!solved && !hint && (

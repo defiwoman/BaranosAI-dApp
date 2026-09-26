@@ -1,0 +1,34 @@
+.badge {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+}
+
+.text {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--shell-muted);
+  white-space: nowrap;
+}
+
+.text strong {
+  color: var(--powder);
+  font-weight: 600;
+}
+
+.bar {
+  display: block;
+  height: 2px;
+  background: var(--rule-strong);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--powder);
+  box-shadow: 0 0 8px rgba(191, 211, 246, 0.6);
+  transition: width 600ms ease-out;
+}

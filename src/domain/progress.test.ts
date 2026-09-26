@@ -7,7 +7,6 @@ import {
   missingChecks,
   parseProgress,
   passCheck,
-  rankFor,
   recordSubmission,
   resetProgress,
   saveDraft,
@@ -16,10 +15,9 @@ import {
   type Progress,
 } from './progress';
 import { CASE_IDS } from './types';
-import { emptyDraft } from './useCase';
 import { loadProgress, saveProgress, STORAGE_KEY } from '../adapters/storage';
-import { ALL_CHECKS, GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from '../test/fixtures';
-import { migrateLegacyDraft } from './useCase';
+import { ALL_CHECKS, GOOD_ANSWERS, GOOD_DRAFT, LEGACY_DRAFT, THREE_FIELD, v2FinishedSave, v3WithDraft, v4WithDraft, v5CasesDone } from '../test/fixtures';
+import { legacyAnswers, migrateLegacyDraft, splitAnswers } from './useCase';
 
 const t = (day: number) => new Date(Date.UTC(2026, 8, day, 12));
 
@@ -27,7 +25,7 @@ function passAll(p: Progress, checks = ALL_CHECKS, day = 25): Progress {
   return checks.reduce((acc, c) => passCheck(acc, c, t(day)), p);
 }
 
-const submission = (day: number) => ({ id: 'sub-12345678', submittedAt: t(day).toISOString(), curriculumVersion: '3', answers: GOOD_DRAFT });
+const submission = (day: number) => ({ id: 'sub-12345678', submittedAt: t(day).toISOString(), curriculumVersion: '3', answers: GOOD_ANSWERS });
 
 const v1Save = (ids: string[]) =>
   JSON.stringify({
@@ -37,7 +35,7 @@ const v1Save = (ids: string[]) =>
     achievements: [],
   });
 
-describe('progress v4', () => {
+describe('progress v5', () => {
   it('completes a case only when all its checks pass, and records the date once', () => {
     let p = passCheck(emptyProgress(), '06-review-reproduce', t(24));
     expect(isCompleted(p, '06')).toBe(false);
@@ -51,12 +49,11 @@ describe('progress v4', () => {
     const p = passCheck(emptyProgress(), '01-replay');
     expect(isUnlocked(p, '02')).toBe(true);
     expect(isUnlocked(p, '03')).toBe(false);
-    expect(rankFor(p)).toBe('Observer');
   });
 
   it('round-trips through JSON, including the draft and submission', () => {
     let p = passAll(setProfile(emptyProgress(), { name: 'Zoë 李', xHandle: 'zoe_1' }));
-    p = saveDraft(p, { ...GOOD_DRAFT, whyVerify: '' });
+    p = saveDraft(p, { ...GOOD_DRAFT, risks: '' });
     expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
     p = recordSubmission(withSubmissionId(p, 'sub-12345678'), submission(26), t(26));
     expect(parseProgress(JSON.stringify(p))).toEqual({ ok: true, progress: p });
@@ -70,7 +67,7 @@ describe('progress v4', () => {
     ['bad date', JSON.stringify({ ...emptyProgress(), certificate: { completedAt: 'soon' } })],
     ['bad checks', JSON.stringify({ ...emptyProgress(), passedChecks: [1] })],
     ['bad draft', JSON.stringify({ ...emptyProgress(), useCase: { ...emptyProgress().useCase, draft: { title: 5 } } })],
-    ['incomplete submission', JSON.stringify({ ...emptyProgress(), useCase: { ...emptyProgress().useCase, submission: { ...submission(1), answers: emptyDraft() } } })],
+    ['incomplete submission', JSON.stringify({ ...emptyProgress(), useCase: { ...emptyProgress().useCase, submission: { ...submission(1), answers: { title: 'x', whoAndWhat: '', whyVerify: '' } } } })],
     ['bad v1', JSON.stringify({ version: 1, cases: { '01': { completedAt: 'yesterday' } } })],
   ])('rejects malformed data (%s)', (_, raw) => {
     expect(parseProgress(raw)).toEqual({ ok: false, reason: 'malformed' });
@@ -99,7 +96,7 @@ describe('the use-case requirement', () => {
     p = recordSubmission(p, submission(26), t(26));
     expect(certificateEligibility(p)).toEqual({ eligible: true, name: 'Ada', completedAt: t(26).toISOString(), useCaseTitle: 'Fair harbour berths' });
     // A second submission, a name change, replays and a reload change nothing.
-    p = recordSubmission(p, { ...submission(28), answers: { ...GOOD_DRAFT, title: 'Other' } }, t(28));
+    p = recordSubmission(p, { ...submission(28), answers: { ...GOOD_ANSWERS, title: 'Other' } }, t(28));
     p = passAll(setProfile(p, { name: 'Ada L.' }), ALL_CHECKS, 29);
     const reloaded = parseProgress(JSON.stringify(p));
     expect(reloaded.ok && certificateEligibility(reloaded.progress)).toEqual({
@@ -112,7 +109,7 @@ describe('the use-case requirement', () => {
 
   it('refuses to record an incomplete use case', () => {
     const p = passAll(emptyProgress());
-    expect(() => recordSubmission(p, { ...submission(26), answers: { ...GOOD_DRAFT, whyVerify: '   ' } })).toThrow();
+    expect(() => recordSubmission(p, { ...submission(26), answers: { ...GOOD_ANSWERS, whyVerify: '   ' } })).toThrow();
   });
 
   it('keeps one submission ID across retries', () => {
@@ -121,7 +118,7 @@ describe('the use-case requirement', () => {
   });
 
   it('cannot be unlocked by hand-editing the certificate field', () => {
-    const forged = { ...v4CasesDone(), certificate: { completedAt: t(1).toISOString(), curriculumVersion: '3' } };
+    const forged = { ...v5CasesDone(), certificate: { completedAt: t(1).toISOString(), curriculumVersion: '3' } };
     const r = parseProgress(JSON.stringify(forged));
     expect(r.ok && certificateEligibility(r.progress).eligible).toBe(false);
   });
@@ -139,6 +136,29 @@ describe('migrations', () => {
     const done = recordSubmission(r.progress, submission(26), t(26));
     expect(certificateEligibility(done)).toMatchObject({ eligible: true, completedAt: t(26).toISOString() });
     expect(done.earlierCertificate).toEqual({ completedAt: t(24).toISOString(), curriculumVersion: '2' });
+  });
+
+  it('v4: splits a three-field draft into the four design steps and keeps the original', () => {
+    const r = parseProgress(JSON.stringify(v4WithDraft()));
+    expect(r.ok && r.migratedFrom).toBe(4);
+    if (!r.ok) return;
+    expect(r.progress.useCase.draft).toEqual({
+      title: 'Honest harbour',
+      who: 'Boat owners need fair berths.',
+      decides: 'The AI ranks requests.',
+      verifiable: 'Rankings can be replayed.',
+      risks: 'The rules may be unfair.',
+    });
+    expect(r.progress.useCase.threeFieldDraft).toEqual(THREE_FIELD);
+    expect(splitAnswers(THREE_FIELD)).toEqual(r.progress.useCase.draft);
+  });
+
+  it('v4: keeps a received submission unchanged', () => {
+    const save = v4WithDraft();
+    const sub = { id: 'sub-12345678', submittedAt: t(25).toISOString(), curriculumVersion: '3.1', answers: THREE_FIELD };
+    const r = parseProgress(JSON.stringify({ ...save, useCase: { ...save.useCase, submission: sub }, certificate: { completedAt: t(25).toISOString(), curriculumVersion: '3' } }));
+    expect(r.ok && r.progress.useCase.submission).toEqual(sub);
+    expect(r.ok && certificateEligibility(r.progress).eligible).toBe(true);
   });
 
   it('v3: folds a five-step draft into three fields and keeps the original as a backup', () => {
@@ -160,14 +180,14 @@ describe('migrations', () => {
     const r = parseProgress(JSON.stringify({ ...save, useCase: { ...save.useCase, submission: sub }, certificate: { completedAt: t(25).toISOString(), curriculumVersion: '3' } }));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.progress.useCase.submission).toEqual({ ...sub, answers: migrateLegacyDraft(LEGACY_DRAFT), legacyAnswers: LEGACY_DRAFT });
+    expect(r.progress.useCase.submission).toEqual({ ...sub, answers: legacyAnswers(LEGACY_DRAFT), legacyAnswers: LEGACY_DRAFT });
     expect(certificateEligibility(r.progress)).toMatchObject({ eligible: true, completedAt: t(25).toISOString() });
   });
 
   it('v3: an empty five-step draft migrates without a backup', () => {
     const empty = { title: '', problem: '', aiRole: '', whyVerify: '', agreedRules: '', risks: '', concepts: [] };
     const r = parseProgress(JSON.stringify(v3WithDraft(empty)));
-    expect(r.ok && r.progress.useCase).toMatchObject({ draft: { title: '', whoAndWhat: '', whyVerify: '' }, legacyDraft: null });
+    expect(r.ok && r.progress.useCase).toMatchObject({ draft: { title: '', who: '', decides: '', verifiable: '', risks: '' }, legacyDraft: null });
   });
 
   it('v1: keeps completed cases; a finisher still needs one review question and the use case', () => {
@@ -183,7 +203,7 @@ describe('migrations', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2FinishedSave()));
     const loaded = loadProgress(localStorage);
     expect(loaded.migrated).toBe(true);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(4);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(5);
     expect(loadProgress(localStorage)).toEqual({ progress: loaded.progress, recovered: false, migrated: false });
   });
 });

@@ -1,22 +1,31 @@
 :root {
-  --cover-navy: #060c2c;
-  --logo-navy: #030b30;
-  --paper: #eef3fb;
-  --logo-light: #e2ebfc;
-  --powder: #bfd3f6;
-  --ink: #182746;
-  --ink-2: #4c5d79;
-  --success: #17644f;
-  --error: #993e45;
-  --rule: #c9d6ec;
-  --shell-rule: rgba(191, 211, 246, 0.22);
-  --shell-muted: #a9b9d8;
-  --focus: #7fb0ff;
+  /* Surfaces: a dark verification-system console. Token names are kept from the first
+     build so existing modules keep working: "paper" is now a panel, "ink" is panel text. */
+  --cover-navy: #07090e; /* page background */
+  --logo-navy: #030b30; /* the logo's own background, used around the mark */
+  --paper: #0e131d; /* panel / system component surface */
+  --panel-2: #121927; /* raised panel, hovered card */
+  --field: #0a0e16; /* inputs */
+  --logo-light: #e4eaf5;
+  --powder: #bfd3f6; /* Baranos pale blue: primary accent */
+  --accent: #8fb4ff; /* active state */
+  --ink: #e4eaf5; /* text on panels */
+  --ink-2: #9aa7bd; /* secondary text */
+  --success: #4fd1a1;
+  --warn: #f2c14e;
+  --error: #ff7d88;
+  --rule: #1d2433;
+  --rule-strong: #2c3548;
+  --shell-rule: rgba(143, 180, 255, 0.14);
+  --shell-muted: #8d9ab0;
+  --focus: #8fb4ff;
 
-  --serif: Georgia, 'Times New Roman', serif;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  /* Kept for the few places that used the old serif; the console uses sans throughout. */
+  --serif: var(--sans);
 
-  --radius: 10px;
+  --radius: 8px;
   --tap: 44px;
 
   color-scheme: dark;
@@ -37,16 +46,39 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--cover-navy);
+  /* A fine structural grid: the infrastructure under the interface. */
+  background-color: var(--cover-navy);
+  background-image:
+    linear-gradient(rgba(143, 180, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 180, 255, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--serif);
-  font-weight: normal;
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   line-height: 1.2;
   margin: 0 0 0.5em;
+}
+
+/* Machine / system information. */
+.mono,
+code,
+kbd {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  letter-spacing: 0;
+}
+
+.sys-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--shell-muted);
 }
 
 p {
@@ -55,6 +87,10 @@ p {
 
 a {
   color: var(--powder);
+}
+
+::selection {
+  background: rgba(143, 180, 255, 0.35);
 }
 
 button {

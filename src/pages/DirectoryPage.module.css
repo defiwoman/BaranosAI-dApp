@@ -1,6 +1,14 @@
 .page {
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
+}
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin: 0 0 6px;
 }
 
 .title {
@@ -11,54 +19,6 @@
   outline: none;
 }
 
-.list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 14px;
-}
-
-.card {
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.card a {
-  color: var(--ink);
-}
-
-.card p {
-  margin-bottom: 0.5em;
-}
-
-.muted {
-  background: #d9e3f3;
-}
-
-.id {
-  font-size: 0.85rem;
-  color: var(--ink-2);
-  margin: 0 0 2px;
-}
-
-.caseTitle {
-  font-size: 1.35rem;
-  margin-bottom: 6px;
-}
-
-.caseTitle a {
-  display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-}
-
-.status {
-  font-weight: 600;
-}
-
 .requirement {
-  color: var(--powder);
+  color: var(--ink-2);
 }

@@ -106,7 +106,7 @@
 }
 
 .error {
-  color: #ffb4bb;
+  color: var(--error);
   font-weight: 600;
 }
 
@@ -131,7 +131,6 @@
 }
 
 .name {
-  color-scheme: light;
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius);
@@ -180,7 +179,6 @@
 
 .share,
 .earlier {
-  color-scheme: light;
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius);
@@ -205,13 +203,13 @@
   padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--ink-2);
-  background: #fff;
+  background: var(--field);
   color: var(--ink);
   resize: vertical;
 }
 
 .tip {
-  background: #fff;
+  background: var(--field);
   border-left: 4px solid var(--powder);
   border-radius: 6px;
   padding: 10px 12px;
@@ -247,4 +245,25 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--tap);
+}
+
+.granted {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  color: var(--success);
+  border: 1px solid var(--success);
+  border-radius: 999px;
+  padding: 5px 14px;
+  margin: 0 0 14px;
+  box-shadow: 0 0 18px rgba(79, 209, 161, 0.18);
+  animation: grant 700ms ease-out both;
+}
+
+@keyframes grant {
+  from {
+    opacity: 0;
+    letter-spacing: 0.4em;
+  }
 }

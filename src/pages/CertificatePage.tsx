@@ -186,8 +186,8 @@ function Earned({ name, completedAt, useCaseTitle }: { name: string; completedAt
   return (
     <div className={styles.page}>
       <header className={styles.celebrate}>
-        <p className={styles.badge} aria-hidden="true">
-          ★
+        <p className={styles.granted}>
+          <span aria-hidden="true">✓ </span>PROTOCOL ARCHITECT CLEARANCE GRANTED
         </p>
         <h1 data-page-heading tabIndex={-1} className={styles.title}>
           Quest complete. You’ve earned your certificate.

@@ -31,7 +31,9 @@ export const V1_COMPLETION_GRANTS: Record<CaseId, readonly string[]> = {
 /**
  * Curriculum versions: 1 = first release (six long cases), 2 = six simplified cases,
  * 3 = six cases plus a submitted personal use case (five-step form),
- * 3.1 = the same requirement with the three-field, single-page use-case form.
+ * 3.1 = the same requirement with the three-field, single-page use-case form,
+ * 3.2 = the verification-console redesign: the use case is designed in four steps
+ *       (sent in the same three fields).
  * Sent with every submission.
  */
-export const CURRICULUM_VERSION = '3.1';
+export const CURRICULUM_VERSION = '3.2';

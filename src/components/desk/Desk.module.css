@@ -124,7 +124,7 @@
 }
 
 .onPaper .button_primary:not(:disabled):hover {
-  background: #0f1a33;
+  background: var(--powder);
 }
 
 .onPaper .button_secondary {
@@ -133,7 +133,7 @@
 }
 
 .onPaper .button_secondary:not(:disabled):hover {
-  background: rgba(24, 39, 70, 0.08);
+  background: rgba(143, 180, 255, 0.08);
 }
 
 .onPaper .button_quiet {

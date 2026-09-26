@@ -2,7 +2,7 @@
 
 *Six cases. Discover how verifiable AI works.*
 
-A community-built learning quest for the Fogo community. With Mira as their guide, participants solve six short investigative cases for a fictional app called Harbor. They finish knowing what BaranosAI does, why it matters, and what verification does not guarantee. Completing all six cases earns a personalised, community-issued certificate.
+A community-built learning quest for the Fogo community. With Mira as their guide, participants investigate six AI decisions for a fictional app called Harbor, from Observer up to Protocol Architect clearance. They finish knowing what BaranosAI does, why it matters, and what verification does not guarantee. Completing all six cases and submitting a use case of their own earns a personalised, community-issued certificate.
 
 Live review deployment: https://baranosaieducationalquest.netlify.app/
 
@@ -10,12 +10,16 @@ Live review deployment: https://baranosaieducationalquest.netlify.app/
 
 ## How it works
 
-- **Entry form:** a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet.
-- **Six cases:** each has a short scenario, one task, one challenge with unlimited retries and an optional hint, then *Why this matters*, *How BaranosAI helps* and *Your takeaway*, plus an optional *Explore further* section and source links.
-- **Final review (Case 06):** three questions on reproducibility, settlement and the limits of verified results.
-- **Your use case (final requirement):** after Case 06, one short page ("Your idea for verifiable AI") with three questions: *Name your idea*, *Who would it help, and what would the AI do?*, *Why does verification matter?*. It reuses the saved certificate name and X handle, autosaves the draft, and applies basic completeness checks (no scoring or approval). Submitting sends it to the quest organiser via Netlify Forms.
-- **Certificate:** unlocked only when all six cases are complete **and** a use case has been received. A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. The certificate is drawn once on a canvas and offered as PNG and as a one-page PDF (the same image). Sharing on X is optional, with an editable post. It is a browser-generated learning reward, not a tamper-proof credential.
-- **Saved data:** profile, progress, use-case draft and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, schema version 4 (curriculum 3.1). Drafts from the earlier five-step form are folded into the three fields without losing text (problem + AI task; verification + agreed rules + limitations, as separate paragraphs), and the original draft is kept as a backup. Older saves migrate in place and keep their completed cases. A certificate earned under curriculum 2 (six cases only) is kept and still downloadable; its owner is asked only for the use case to earn the updated certificate.
+The app is presented as a (simulated) AI verification console: a dark system interface where cases arrive as AI decisions and the interface teaches through its reactions (status labels, a system log, short toasts and a companion node called BARA).
+
+- **Entry / dashboard (`/`):** new participants give a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet. Returning participants see *BARANOS // VERIFICATION SYSTEM*: system status, their clearance, cases resolved, the active case and a system map of case nodes grouped by clearance.
+- **Clearance instead of levels:** OBSERVER → ANALYST → VERIFIER → CHALLENGER → PROTOCOL ARCHITECT (`src/domain/clearance.ts`). Clearance is derived from saved progress, never stored separately, and it gates console capabilities: an Observer sees the output and evidence, an Analyst can inspect model and rules, a Verifier can replay inference, a Challenger can challenge a decision, and Protocol Architect is granted only when the use case is received.
+- **Six cases as system events:** each case follows one loop: *AI decision received → initial trust ("Would you trust this AI decision?") → inspect system objects (model, evidence, rules) → BARA reacts → verify (replay trace, reproduce sandbox, settlement clock or source cross-check) → submit a finding → final trust → resolution → clearance*. Statuses include UNVERIFIED, UNDER REVIEW, REPLAYING, VERIFIED, CHALLENGED and DIVERGENCE DETECTED. The resolution shows *initial trust vs after verification* with an insight, a verdict panel that always states what verification does **not** establish (e.g. "Computation verified · ⚠ Evidence quality remains disputed"), and the debrief (*Why this matters*, *How BaranosAI helps*, *Your takeaway*, *Explore further*, sources). Trust values and investigation flags are per visit and not saved; case completion is still recorded only by passing the learning checks.
+- **BARA:** a faceless glowing node with rule-based, context-aware reactions and an *Ask BARA for a hint* button that gives one short next-step hint (`src/domain/bara.ts`, scripts in `src/content/console.ts`). It is not a chatbot and calls no AI service.
+- **Protocol Architect design (final requirement):** after Case 06, the use-case page asks four short steps (*01 Who needs the AI?*, *02 What does the AI decide?*, *03 What should be verifiable?*, *04 What could still go wrong?*, plus a name), previews the result as a *Your verifiable AI system* card, then submits. The organiser still receives the same three form fields as before: `whoAndWhat` = steps 01 + 02 and `whyVerify` = steps 03 + 04, as separate paragraphs (`composeAnswers` in `src/domain/useCase.ts`). Basic completeness checks only; no scoring or approval.
+- **Certificate:** unlocked only when all six cases are complete **and** a use case has been received ("✓ Protocol Architect clearance granted"). A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. PNG and one-page PDF; optional, editable X post. It is a browser-generated learning reward, not a tamper-proof or official credential.
+- **Saved data:** stored in `localStorage` under the original key `baranos-lab:progress`, schema version 5 (curriculum 3.2). Older saves migrate in place and keep completed cases: a three-field draft (v4) is split into the four steps by paragraph with the original kept as a backup; a five-step draft (v3) is folded into the four steps without losing text and also kept. A certificate earned under curriculum 2 (six cases only) is kept and still downloadable.
+- **Accessibility and motion:** native controls (trust meters are range inputs with labels; object cards are buttons), visible focus, status colours paired with icons and text, toasts announced politely, and `prefers-reduced-motion` makes pulses and replay traces instant.
 
 ## Enabling use-case submissions on Netlify
 
@@ -33,9 +37,9 @@ Submissions use [Netlify Forms](https://docs.netlify.com/forms/setup/). The repo
 2. The deploy you're testing was built *after* detection was enabled (re-run the deploy or push a commit).
 3. *Forms* lists **use-case** as an active form (a deleted form returns 404 for good; recreate it by redeploying).
 
-The **use-case** form now declares `title`, `whoAndWhat` and `whyVerify` in place of the earlier five-step fields. It keeps the same form name, so existing submissions stay in the same form's history.
+The **use-case** form declares `title`, `whoAndWhat` and `whyVerify` (unchanged since curriculum 3.1; the four design steps are combined into these fields). It keeps the same form name, so existing submissions stay in the same form's history.
 
-To verify on the deployed site, submit one use case from a test profile. Check that it appears in the Netlify Forms dashboard and that the certificate unlocks. If detection is off, the app shows "didn’t confirm it saved your use case" and the certificate stays locked.
+To verify on the deployed site, submit one use case from a test profile. Check that it appears in the Netlify Forms dashboard and that the certificate unlocks. If detection is off, the app shows "Use-case submissions aren’t switched on for this site yet" and the certificate stays locked.
 
 Submissions are visible only to site members in the Netlify dashboard. Nothing is published. Netlify's free plan includes a limited number of form submissions per month; check your plan. Optional: add form notifications (email or webhook) under *Forms → Form notifications*.
 
@@ -77,10 +81,11 @@ Hosting the frontend is separate from any future Fogo program deployment. A host
 
 | Path | Contents |
 | --- | --- |
-| `src/content/` | Lessons (`quest.ts`), branding and certificate wording (`brand.ts`), Case 01 fixtures and the source register (no React) |
-| `src/domain/` | Pure functions: toy model, Case 01 state machine, question grading, profile validation, progress schema and migration, certificate eligibility, PDF writer |
+| `src/content/` | Lessons (`quest.ts`), console data per case (`console.ts`: system objects, traces, verdicts, BARA scripts), branding and certificate wording (`brand.ts`), Case 01 fixtures and the source register (no React) |
+| `src/domain/` | Pure functions: clearance, mission state machine (`mission.ts`), BARA responses, toy model, Case 01 state machine, question grading, profile validation, progress schema and migration, certificate eligibility, PDF writer |
 | `src/adapters/` | `simulation` execution adapter, browser storage and certificate rendering |
-| `src/cases/` | One component per case |
+| `src/cases/` | `MissionConsole` (the case loop), case widgets, Case 01 challenge, question sequence |
+| `src/components/console/` | Status pills, system log, toasts, computation line, object cards, verification trace, trust meter, BARA, clearance badge |
 | `src/components/`, `src/pages/` | Shared UI and routed pages |
 | `public/brand/baranos-logo.png` | The supplied logo, unchanged |
 

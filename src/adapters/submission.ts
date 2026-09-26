@@ -1,4 +1,4 @@
-import type { UseCaseDraft } from '../domain/useCase';
+import type { UseCaseAnswers } from '../domain/useCase';
 
 /**
  * Sends a use case to the quest organiser through Netlify Forms.
@@ -31,7 +31,7 @@ export interface SubmissionInput {
   submissionId: string;
   displayName: string;
   xHandle?: string;
-  answers: UseCaseDraft;
+  answers: UseCaseAnswers;
   curriculumVersion: string;
   submittedAt: string;
 }

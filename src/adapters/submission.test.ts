@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import formsHtml from '../../public/__forms.html?raw';
 import { FORM_ENDPOINT, FORM_FIELDS, FORM_NAME, RECEIVED_MARKER, encodeSubmission, submitUseCase } from './submission';
 import receivedHtml from '../../public/use-case-received.html?raw';
-import { GOOD_DRAFT } from '../test/fixtures';
+import { GOOD_ANSWERS } from '../test/fixtures';
 
 const input = {
   submissionId: 'abc-12345678',
   displayName: 'Zoë 李',
   xHandle: 'zoe_1',
-  answers: GOOD_DRAFT,
+  answers: GOOD_ANSWERS,
   curriculumVersion: '3',
   submittedAt: '2026-09-25T10:00:00.000Z',
 };
@@ -31,9 +31,9 @@ describe('Netlify Forms submission', () => {
     expect(body.get('bot-field')).toBe('');
     expect(body.get('displayName')).toBe('Zoë 李');
     expect(body.get('xHandle')).toBe('@zoe_1');
-    expect(body.get('title')).toBe(GOOD_DRAFT.title);
-    expect(body.get('whoAndWhat')).toBe(GOOD_DRAFT.whoAndWhat);
-    expect(body.get('whyVerify')).toBe(GOOD_DRAFT.whyVerify);
+    expect(body.get('title')).toBe(GOOD_ANSWERS.title);
+    expect(body.get('whoAndWhat')).toBe(GOOD_ANSWERS.whoAndWhat);
+    expect(body.get('whyVerify')).toBe(GOOD_ANSWERS.whyVerify);
     expect(body.get('curriculumVersion')).toBe('3');
     expect(body.get('submittedAt')).toBe(input.submittedAt);
     expect([...body.keys()].sort()).toEqual([...FORM_FIELDS].sort());

@@ -1,5 +1,4 @@
 .challenge {
-  color-scheme: light;
   background: var(--paper);
   color: var(--ink);
   border-radius: var(--radius);
@@ -61,11 +60,11 @@
 }
 
 .row:hover:not(.locked) {
-  background: rgba(24, 39, 70, 0.05);
+  background: rgba(143, 180, 255, 0.06);
 }
 
 .selected {
-  background: rgba(191, 211, 246, 0.55);
+  background: rgba(143, 180, 255, 0.12);
   box-shadow: inset 4px 0 0 var(--ink);
 }
 

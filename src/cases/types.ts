@@ -5,4 +5,10 @@ export interface ChallengeProps {
   missing: string[];
   /** True when the case was already complete before this visit (a replay). */
   replay: boolean;
+  /** A finding was submitted and was wrong (feedback is shown by the challenge itself). */
+  onWrong?: () => void;
+  /** Every question in this visit has been answered correctly. */
+  onSolved?: () => void;
+  /** Optional system events from the challenge, e.g. "Challenge submitted". */
+  onEvent?: (text: string, tone: 'info' | 'ok' | 'warn' | 'fail') => void;
 }

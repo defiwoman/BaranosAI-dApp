@@ -1,5 +1,4 @@
 .form {
-  color-scheme: light;
   display: grid;
   gap: 14px;
 }
@@ -31,7 +30,7 @@
   padding: 0 12px;
   border: 1px solid var(--ink-2);
   border-radius: var(--radius);
-  background: #fff;
+  background: var(--field);
   color: var(--ink);
   width: 100%;
 }

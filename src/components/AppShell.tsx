@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouter } from '../router';
 import { useProgress } from '../progressContext';
-import { APP_NAME, APP_SUBTITLE, SIMULATION_NOTE } from '../content/brand';
+import { APP_NAME, SIMULATION_NOTE } from '../content/brand';
+import { ClearanceBadge } from './console/ClearanceBadge';
 import styles from './AppShell.module.css';
 
 const NAV = [
+  { to: '/', label: 'System' },
   { to: '/cases', label: 'Cases' },
   { to: '/notebook', label: 'Notebook' },
   { to: '/summary', label: 'Progress' },
@@ -12,7 +14,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { path } = useRouter();
-  const { recovered, dismissRecovered } = useProgress();
+  const { progress, recovered, dismissRecovered } = useProgress();
   const [simOpen, setSimOpen] = useState(false);
 
   return (
@@ -25,9 +27,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <img src="/brand/baranos-logo.png" alt="" className={styles.logo} width={40} height={40} />
           <span className={styles.brandText}>
             <span className={styles.brandTitle}>{APP_NAME}</span>
-            <span className={styles.brandSub}>{APP_SUBTITLE}</span>
+            <span className={styles.brandSub}>VERIFICATION SYSTEM · SIMULATION</span>
           </span>
         </Link>
+        {progress.profile && <ClearanceBadge />}
         <nav aria-label="Main" className={styles.nav}>
           {NAV.map((item) => (
             <Link
