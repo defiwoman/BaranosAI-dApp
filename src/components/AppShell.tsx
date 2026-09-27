@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouter } from '../router';
 import { useProgress } from '../progressContext';
-import { APP_NAME, APP_SUBTITLE, SIMULATION_NOTE } from '../content/brand';
+import { APP_NAME, APP_SUBTITLE, PRIVACY_NOTE, SIMULATION_NOTE } from '../content/brand';
 import styles from './AppShell.module.css';
 
 const NAV = [
@@ -75,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           toy calculation; nothing here runs a BaranosAI job or a blockchain transaction. Not an official BaranosAI product,
           and not yet reviewed by the BaranosAI team.
         </p>
-        <p>Your name and progress are saved only in this browser.</p>
+        <p>{PRIVACY_NOTE}</p>
       </footer>
     </div>
   );

@@ -5,6 +5,7 @@ import { renderApp } from './test/renderApp';
 import { STORAGE_KEY } from './adapters/storage';
 import { RECEIVED_MARKER, REGISTRATION_RECEIVED_MARKER } from './adapters/submission';
 import { QUEST } from './content/quest';
+import { PRIVACY_NOTE } from './content/brand';
 import { CASE_IDS, type CaseId } from './domain/types';
 import { USE_CASE_FIELDS } from './domain/useCase';
 import { GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from './test/fixtures';
@@ -94,7 +95,10 @@ describe('entry form', () => {
     const user = userEvent.setup();
     renderApp('/');
     expect(screen.getByRole('heading', { name: 'Your quest starts here.' })).toBeInTheDocument();
-    expect(screen.getByText('Your name and progress are saved in this browser so you can return to your quest.')).toBeInTheDocument();
+    // The privacy note is visible in the entry form before the registration is submitted.
+    const form = screen.getByRole('button', { name: 'Start my quest' }).closest('form')!;
+    expect(within(form).getByText(PRIVACY_NOTE)).toBeInTheDocument();
+    expect(screen.queryByText(/saved only in this browser/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/email|password/i)).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Name on your certificate'), '    ');
