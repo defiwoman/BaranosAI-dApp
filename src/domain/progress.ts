@@ -1,6 +1,8 @@
 import { CASE_IDS, isCaseId, type CaseId } from './types';
 import { CURRICULUM_VERSION, REQUIRED_CHECKS, V1_COMPLETION_GRANTS } from './curriculum';
 import { validateName, validateXHandle, type Profile } from './profile';
+import { isId, newId } from './ids';
+import { enqueue, parseOutbox, sameProfile, type PendingRegistration } from './registration';
 import {
   emptyDraft,
   isDraftComplete,
@@ -12,7 +14,7 @@ import {
   type UseCaseDraft,
 } from './useCase';
 
-export const PROGRESS_VERSION = 4;
+export const PROGRESS_VERSION = 5;
 
 export interface CaseRecord {
   /** When the case first became complete. */
@@ -22,6 +24,8 @@ export interface CaseRecord {
 /** A use case the organiser's server confirmed it received. */
 export interface Submission {
   id: string;
+  /** The participant who sent it. Absent on submissions made before participant IDs existed. */
+  participantId?: string;
   submittedAt: string;
   curriculumVersion: string;
   answers: UseCaseDraft;
@@ -42,6 +46,13 @@ export interface UseCaseState {
 export interface Progress {
   version: typeof PROGRESS_VERSION;
   profile: Profile | null;
+  /**
+   * Stable random ID linking this participant's entry form and use case. Created with the first
+   * profile (or at migration for existing profiles) and kept through name edits and resets.
+   */
+  participantId: string | null;
+  /** Entry-form submissions not yet confirmed as stored by the organiser's server. */
+  outbox: PendingRegistration[];
   /** Learning checks passed, see REQUIRED_CHECKS. */
   passedChecks: string[];
   cases: Partial<Record<CaseId, CaseRecord>>;
@@ -62,6 +73,8 @@ export function emptyProgress(): Progress {
   return {
     version: PROGRESS_VERSION,
     profile: null,
+    participantId: null,
+    outbox: [],
     passedChecks: [],
     cases: {},
     useCase: emptyUseCase(),
@@ -73,14 +86,13 @@ export function emptyProgress(): Progress {
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
 const isDate = (v: unknown): v is string => typeof v === 'string' && !Number.isNaN(Date.parse(v));
-const isId = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(v);
 
 export type ParseResult =
   | { ok: true; progress: Progress; migratedFrom?: number }
   | { ok: false; reason: 'empty' | 'malformed' | 'unsupported_version' };
 
 /** Validates stored progress, migrating older versions. Anything unexpected is rejected, not partially trusted. */
-export function parseProgress(raw: string | null): ParseResult {
+export function parseProgress(raw: string | null, makeId: () => string = newId): ParseResult {
   if (raw === null || raw === '') return { ok: false, reason: 'empty' };
   let data: unknown;
   try {
@@ -93,9 +105,11 @@ export function parseProgress(raw: string | null): ParseResult {
   if (data.version === 1) progress = migrateV1(data);
   else if (data.version === 2) progress = migrateV2(data);
   else if (data.version === 3) progress = parseStored(data, parseUseCaseV3);
-  else if (data.version === PROGRESS_VERSION) progress = parseStored(data, parseUseCaseV4);
+  else if (data.version === 4 || data.version === PROGRESS_VERSION) progress = parseStored(data, parseUseCaseV4);
   else return { ok: false, reason: typeof data.version === 'number' ? 'unsupported_version' : 'malformed' };
   if (!progress) return { ok: false, reason: 'malformed' };
+  // Existing participants get their ID once, here; it is saved with the migrated record.
+  if (progress.profile && !progress.participantId) progress = { ...progress, participantId: makeId() };
   return data.version === PROGRESS_VERSION ? { ok: true, progress } : { ok: true, progress, migratedFrom: data.version as number };
 }
 
@@ -155,7 +169,9 @@ function parseUseCaseV4(value: unknown): UseCaseState | null {
     const meta = parseSubmissionMeta(value.submission);
     const answers = meta && parseDraft((value.submission as Record<string, unknown>).answers);
     if (!meta || !answers || !isDraftComplete(answers)) return null;
-    submission = { ...meta, answers };
+    const participantId = (value.submission as Record<string, unknown>).participantId;
+    if (participantId !== undefined && !isId(participantId)) return null;
+    submission = participantId === undefined ? { ...meta, answers } : { ...meta, participantId, answers };
     const legacyAnswers = (value.submission as Record<string, unknown>).legacyAnswers;
     if (legacyAnswers !== undefined) {
       const parsed = parseLegacyDraft(legacyAnswers);
@@ -201,9 +217,13 @@ function parseStored(d: Record<string, unknown>, parseUseCase: (v: unknown) => U
   const earlierCertificate = parseCertificate(d.earlierCertificate, '2');
   if (profile === undefined || !cases || !useCase || certificate === undefined || earlierCertificate === undefined) return null;
   if (!isStringArray(d.passedChecks)) return null;
+  // v5 fields. A damaged ID is replaced rather than discarding the participant's progress.
+  const participantId = isId(d.participantId) ? d.participantId : null;
   return normalise({
     version: PROGRESS_VERSION,
     profile,
+    participantId,
+    outbox: parseOutbox(d.outbox).filter((e) => e.participantId === participantId),
     passedChecks: [...new Set(d.passedChecks)],
     cases,
     useCase,
@@ -285,13 +305,34 @@ export function passCheck(progress: Progress, check: string, now: Date = new Dat
   return normalise({ ...progress, passedChecks: [...progress.passedChecks, check] }, now);
 }
 
-export function setProfile(progress: Progress, profile: Profile): Progress {
-  return { ...progress, profile };
+/**
+ * Saves the entry form (or an edit of it) and queues it for the organiser. The participant ID is
+ * created with the first profile and never derived from the name. An unchanged profile queues nothing.
+ */
+export function setProfile(progress: Progress, profile: Profile, now: Date = new Date(), makeId: () => string = newId): Progress {
+  if (sameProfile(progress.profile, profile)) return progress;
+  const participantId = progress.participantId ?? makeId();
+  const kind = progress.profile ? 'update' : progress.passedChecks.length > 0 ? 'returning' : 'new';
+  const entry: PendingRegistration = {
+    id: makeId(),
+    participantId,
+    kind,
+    name: profile.name,
+    ...(profile.xHandle ? { xHandle: profile.xHandle } : {}),
+    submittedAt: now.toISOString(),
+  };
+  return { ...progress, profile, participantId, outbox: enqueue(progress.outbox, entry) };
 }
 
-/** Clears learning progress. The profile is kept so the participant need not re-enter their name. */
+/** Removes an entry the server confirmed it stored. */
+export function markRegistrationDelivered(progress: Progress, id: string): Progress {
+  if (!progress.outbox.some((e) => e.id === id)) return progress;
+  return { ...progress, outbox: progress.outbox.filter((e) => e.id !== id) };
+}
+
+/** Clears learning progress. The profile, participant ID and unsent entries are kept, so the participant need not re-enter their name. */
 export function resetProgress(progress: Progress): Progress {
-  return { ...emptyProgress(), profile: progress.profile };
+  return { ...emptyProgress(), profile: progress.profile, participantId: progress.participantId, outbox: progress.outbox };
 }
 
 /** Autosaves the use-case draft. */
