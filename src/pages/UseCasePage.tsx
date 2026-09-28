@@ -78,8 +78,11 @@ function UseCaseForm() {
     setSubmitError(null);
     const answers = cleanDraft(draft);
     const submittedAt = new Date().toISOString();
+    // Always set once a profile exists (created with it, or at migration for older saves).
+    const participantId = progress.participantId ?? 'not-assigned';
     const result = await submitUseCase({
       submissionId: id,
+      participantId,
       displayName: profile.name,
       xHandle: profile.xHandle,
       answers,
@@ -89,7 +92,7 @@ function UseCaseForm() {
     inFlight.current = false;
     setBusy(false);
     if (result.ok) {
-      recordSubmission({ id, submittedAt, curriculumVersion: CURRICULUM_VERSION, answers });
+      recordSubmission({ id, participantId, submittedAt, curriculumVersion: CURRICULUM_VERSION, answers });
       navigate('/certificate');
     } else {
       setSubmitError(result.error);

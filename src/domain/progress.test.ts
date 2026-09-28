@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   certificateEligibility,
+  completedCases,
   emptyProgress,
+  markRegistrationDelivered,
   isCompleted,
   isUnlocked,
   missingChecks,
@@ -20,6 +22,7 @@ import { emptyDraft } from './useCase';
 import { loadProgress, saveProgress, STORAGE_KEY } from '../adapters/storage';
 import { ALL_CHECKS, GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from '../test/fixtures';
 import { migrateLegacyDraft } from './useCase';
+import { OUTBOX_LIMIT } from './registration';
 
 const t = (day: number) => new Date(Date.UTC(2026, 8, day, 12));
 
@@ -80,10 +83,10 @@ describe('progress v4', () => {
     expect(parseProgress(JSON.stringify({ version: 9 }))).toEqual({ ok: false, reason: 'unsupported_version' });
   });
 
-  it('reset keeps the certificate name but removes progress, draft and certificate', () => {
+  it('reset keeps the certificate name, participant ID and unsent entry forms but removes progress, draft and certificate', () => {
     let p = passAll(setProfile(emptyProgress(), { name: 'Mira' }));
     p = recordSubmission(p, submission(26));
-    expect(resetProgress(p)).toEqual({ ...emptyProgress(), profile: { name: 'Mira' } });
+    expect(resetProgress(p)).toEqual({ ...emptyProgress(), profile: { name: 'Mira' }, participantId: p.participantId, outbox: p.outbox });
   });
 });
 
@@ -183,8 +186,75 @@ describe('migrations', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v2FinishedSave()));
     const loaded = loadProgress(localStorage);
     expect(loaded.migrated).toBe(true);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(4);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(5);
     expect(loadProgress(localStorage)).toEqual({ progress: loaded.progress, recovered: false, migrated: false });
+  });
+});
+
+describe('participant identity and the entry-form outbox', () => {
+  let n = 0;
+  const ids = () => `id-0000000${++n}`;
+
+  it('creates one participant ID with the first profile and queues a registration, with or without an X handle', () => {
+    const a = setProfile(emptyProgress(), { name: 'Ada' }, t(1), ids);
+    expect(a.participantId).toMatch(/^id-/);
+    expect(a.outbox).toEqual([{ id: expect.any(String), participantId: a.participantId, kind: 'new', name: 'Ada', submittedAt: t(1).toISOString() }]);
+    const b = setProfile(emptyProgress(), { name: 'Bo', xHandle: 'bo_x' }, t(1), ids);
+    expect(b.outbox[0]).toMatchObject({ kind: 'new', name: 'Bo', xHandle: 'bo_x' });
+    expect(b.participantId).not.toBe(a.participantId);
+  });
+
+  it('keeps the ID through edits, queues updates as snapshots, and ignores an unchanged save', () => {
+    const a = setProfile(emptyProgress(), { name: 'Ada' }, t(1), ids);
+    const same = setProfile(a, { name: 'Ada' }, t(2), ids);
+    expect(same).toBe(a);
+    const edited = setProfile(a, { name: 'Ada L.', xHandle: 'ada' }, t(3), ids);
+    expect(edited.participantId).toBe(a.participantId);
+    expect(edited.outbox.map((e) => [e.kind, e.name, e.participantId])).toEqual([
+      ['new', 'Ada', a.participantId],
+      ['update', 'Ada L.', a.participantId],
+    ]);
+    expect(new Set(edited.outbox.map((e) => e.id)).size).toBe(2);
+  });
+
+  it('marks earlier progress as a returning participant, and removes only a confirmed entry', () => {
+    const p = setProfile(passCheck(emptyProgress(), '01-replay', t(1)), { name: 'Kai' }, t(2), ids);
+    expect(p.outbox[0].kind).toBe('returning');
+    expect(markRegistrationDelivered(p, 'unknown-id')).toBe(p);
+    expect(markRegistrationDelivered(p, p.outbox[0].id).outbox).toEqual([]);
+  });
+
+  it('gives existing v4 profiles an ID once at migration, without queueing a registration', () => {
+    const r = parseProgress(JSON.stringify(v4CasesDone(GOOD_DRAFT, 'Rin')), () => 'migrated-id-1');
+    expect(r.ok && r.migratedFrom).toBe(4);
+    if (!r.ok) return;
+    expect(r.progress.participantId).toBe('migrated-id-1');
+    expect(r.progress.outbox).toEqual([]);
+    expect(r.progress.useCase.draft).toEqual(GOOD_DRAFT);
+    const again = parseProgress(JSON.stringify(r.progress), () => 'other-id-222');
+    expect(again.ok && again.progress.participantId).toBe('migrated-id-1');
+  });
+
+  it('a v1 save without a profile gets no ID until the entry form is submitted', () => {
+    const r = parseProgress(v1Save(['01']), () => 'never-used-1');
+    expect(r.ok && r.progress.participantId).toBeNull();
+  });
+
+  it('drops damaged or foreign outbox entries without losing progress', () => {
+    const p = setProfile(passAll(emptyProgress()), { name: 'Ada' }, t(1), ids);
+    const foreign = { ...p.outbox[0], id: 'foreign-entry-1', participantId: 'someone-else-1' };
+    const raw = JSON.stringify({ ...p, outbox: [p.outbox[0], { id: 5 }, foreign, p.outbox[0]] });
+    const r = parseProgress(raw);
+    expect(r.ok && r.progress.outbox).toEqual([p.outbox[0]]);
+    expect(r.ok && completedCases(r.progress)).toHaveLength(6);
+  });
+
+  it('bounds the outbox by dropping the oldest name updates, never the first registration', () => {
+    let p = setProfile(emptyProgress(), { name: 'Ada' }, t(1), ids);
+    for (let i = 0; i < OUTBOX_LIMIT + 5; i++) p = setProfile(p, { name: `Ada ${i}` }, t(2), ids);
+    expect(p.outbox).toHaveLength(OUTBOX_LIMIT);
+    expect(p.outbox[0].kind).toBe('new');
+    expect(p.outbox.at(-1)!.name).toBe(`Ada ${OUTBOX_LIMIT + 4}`);
   });
 });
 

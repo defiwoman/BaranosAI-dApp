@@ -1,28 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { renderApp } from './test/renderApp';
 import { STORAGE_KEY } from './adapters/storage';
-import { RECEIVED_MARKER } from './adapters/submission';
+import { RECEIVED_MARKER, REGISTRATION_RECEIVED_MARKER } from './adapters/submission';
 import { QUEST } from './content/quest';
+import { PRIVACY_NOTE } from './content/brand';
 import { CASE_IDS, type CaseId } from './domain/types';
 import { USE_CASE_FIELDS } from './domain/useCase';
 import { GOOD_DRAFT, LEGACY_DRAFT, v2FinishedSave, v3WithDraft, v4CasesDone } from './test/fixtures';
 
 afterEach(() => vi.unstubAllGlobals());
 
-/** Stands in for the Netlify Forms endpoint. */
+/** Stands in for the Netlify Forms endpoint: on 200 it returns the posted form's confirmation page. */
 function mockServer(...statuses: (number | 'offline')[]) {
   const calls: URLSearchParams[] = [];
   let i = 0;
   const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
-    calls.push(new URLSearchParams(init.body as string));
+    const body = new URLSearchParams(init.body as string);
+    calls.push(body);
     const s = statuses[Math.min(i++, statuses.length - 1)];
     if (s === 'offline') throw new TypeError('Failed to fetch');
-    return new Response(s === 200 ? `<main ${RECEIVED_MARKER}>Received</main>` : 'error', { status: s });
+    const marker = body.get('form-name') === 'registration' ? REGISTRATION_RECEIVED_MARKER : RECEIVED_MARKER;
+    return new Response(s === 200 ? `<main ${marker}>Received</main>` : 'error', { status: s });
   });
   vi.stubGlobal('fetch', fetchMock);
-  return { calls, fetchMock };
+  const form = (name: string) => calls.filter((c) => c.get('form-name') === name);
+  return { calls, fetchMock, form };
 }
 
 const label = (id: string) => USE_CASE_FIELDS.find((f) => f.id === id)!.label;
@@ -37,6 +41,7 @@ const saved = () => JSON.parse(localStorage.getItem(STORAGE_KEY)!);
 
 function reload(path: string) {
   const snapshot = localStorage.getItem(STORAGE_KEY);
+  cleanup(); // unmount, as a real reload would
   document.body.innerHTML = '';
   if (snapshot) localStorage.setItem(STORAGE_KEY, snapshot);
   return renderApp(path);
@@ -90,7 +95,10 @@ describe('entry form', () => {
     const user = userEvent.setup();
     renderApp('/');
     expect(screen.getByRole('heading', { name: 'Your quest starts here.' })).toBeInTheDocument();
-    expect(screen.getByText('Your name and progress are saved in this browser so you can return to your quest.')).toBeInTheDocument();
+    // The privacy note is visible in the entry form before the registration is submitted.
+    const form = screen.getByRole('button', { name: 'Start my quest' }).closest('form')!;
+    expect(within(form).getByText(PRIVACY_NOTE)).toBeInTheDocument();
+    expect(screen.queryByText(/saved only in this browser/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/email|password/i)).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Name on your certificate'), '    ');
@@ -118,6 +126,126 @@ describe('entry form', () => {
     expect(window.location.pathname).toBe('/case/02');
     expect(screen.getByRole('heading', { level: 1, name: 'Are we checking the same task?' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'This case unlocks later' })).toBeInTheDocument();
+  });
+});
+
+describe('entry form notifications', () => {
+  it('sends the registration once, with an X handle, and links it to the final case study', async () => {
+    const user = userEvent.setup();
+    const server = mockServer(200);
+    renderApp('/');
+    await user.type(screen.getByLabelText('Name on your certificate'), 'Zoë 李');
+    await user.type(screen.getByLabelText(/X handle/), '@zoe_learns');
+    await user.click(screen.getByRole('button', { name: 'Start my quest' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Can you check the answer?' })).toBeInTheDocument();
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    const [reg] = server.form('registration');
+    expect(server.calls).toHaveLength(1);
+    expect(reg.get('displayName')).toBe('Zoë 李');
+    expect(reg.get('xHandle')).toBe('@zoe_learns');
+    expect(reg.get('registrationType')).toBe('New participant');
+    expect(reg.get('participantId')).toBe(saved().participantId);
+    expect(reg.get('subject')).toBe('[BaranosAI Quest · Local development] Registration: Zoë 李 (@zoe_learns)');
+
+    // Page visits, game interactions and reloads send nothing more.
+    await solveCase01(user);
+    reload('/cases');
+    reload('/');
+    expect(server.calls).toHaveLength(1);
+  });
+
+  it('works without an X handle and never blocks the quest when the server is unreachable; retries with the same ID', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const server = mockServer('offline', 404, 200);
+      renderApp('/');
+      await enterName(user, 'Sam');
+      expect(screen.getByRole('heading', { level: 1, name: 'Can you check the answer?' })).toBeInTheDocument();
+      await waitFor(() => expect(server.calls).toHaveLength(1));
+      expect(saved().outbox).toHaveLength(1);
+      expect(saved().profile).toEqual({ name: 'Sam' });
+
+      await act(() => vi.advanceTimersByTimeAsync(15_000));
+      await waitFor(() => expect(server.calls).toHaveLength(2));
+      expect(saved().outbox).toHaveLength(1);
+      await act(() => vi.advanceTimersByTimeAsync(60_000));
+      await waitFor(() => expect(saved().outbox).toEqual([]));
+      const ids = server.calls.map((c) => c.get('submissionId'));
+      expect(new Set(ids).size).toBe(1);
+      expect(server.calls[2].get('xHandle')).toBe('Not provided');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps an unsent registration across a reload and sends it when the browser is back online', async () => {
+    const user = userEvent.setup();
+    renderApp('/');
+    await enterName(user, 'Ola');
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    const pending = saved().outbox[0];
+    expect(pending).toMatchObject({ kind: 'new', name: 'Ola' });
+
+    const server = mockServer(200);
+    reload('/case/01');
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    expect(server.form('registration')[0].get('submissionId')).toBe(pending.id);
+
+    // Offline again for an update, then the "online" event triggers the retry.
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
+    reload('/');
+    await user.click(screen.getByRole('button', { name: 'Edit certificate name' }));
+    await user.type(screen.getByLabelText(/X handle/), 'ola_x');
+    await user.click(screen.getByRole('button', { name: 'Save my name' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    const again = mockServer(200);
+    await act(async () => void window.dispatchEvent(new Event('online')));
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    expect(again.form('registration')[0].get('xHandle')).toBe('@ola_x');
+    expect(again.form('registration')[0].get('participantId')).toBe(pending.participantId);
+  });
+
+  it('an existing participant resumes a saved quest, gets a stable ID, and the case study carries their details', async () => {
+    const user = userEvent.setup();
+    const server = mockServer(200);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...v4CasesDone(GOOD_DRAFT, 'Rin'), profile: { name: 'Rin', xHandle: 'rin_x' } }));
+    renderApp('/');
+    expect(screen.getByRole('heading', { name: 'Welcome back, Rin.' })).toBeInTheDocument();
+    const participantId = saved().participantId;
+    expect(participantId).toMatch(/^[A-Za-z0-9-]{8,64}$/);
+    expect(saved().version).toBe(5);
+    reload('/use-case');
+    expect(saved().participantId).toBe(participantId);
+    expect(screen.getByLabelText(label('whyVerify'))).toHaveValue(GOOD_DRAFT.whyVerify);
+    await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
+    expect(await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
+    // No registration is sent on a visit; the one case-study email is complete on its own.
+    expect(server.form('registration')).toHaveLength(0);
+    const [sent] = server.form('use-case');
+    expect(sent.get('participantId')).toBe(participantId);
+    expect(sent.get('displayName')).toBe('Rin');
+    expect(sent.get('xHandle')).toBe('@rin_x');
+    expect(sent.get('readableSubmission')).toContain(`Idea title\n${GOOD_DRAFT.title}`);
+    expect(sent.get('readableSubmission')).toContain(GOOD_DRAFT.whyVerify);
+  });
+
+  it('does not mix participants: a different browser record gets its own ID', async () => {
+    const user = userEvent.setup();
+    const server = mockServer(200);
+    renderApp('/');
+    await enterName(user, 'First');
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    const first = saved().participantId;
+    localStorage.clear();
+    reload('/');
+    await enterName(user, 'Second');
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    expect(saved().participantId).not.toBe(first);
+    expect(server.form('registration').map((c) => [c.get('displayName'), c.get('participantId')])).toEqual([
+      ['First', first],
+      ['Second', saved().participantId],
+    ]);
   });
 });
 
@@ -174,16 +302,21 @@ describe('cases', () => {
     const server = mockServer(200);
     await user.click(screen.getByRole('link', { name: 'Create my use case' }));
     expect(screen.getByRole('heading', { level: 1, name: 'Your idea for verifiable AI' })).toBeInTheDocument();
+    // The router focuses the new heading on the next animation frame; typing before that would lose keystrokes.
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Your idea for verifiable AI' })).toHaveFocus());
     await fillUseCase(user);
     expect(screen.getByText(/Submitting sends your certificate name/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Submit and unlock my certificate' }));
 
     expect(await screen.findByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
     expect(screen.getByText('You explored verifiable AI, solved all six cases, and developed a use case of your own.')).toBeInTheDocument();
-    expect(server.calls).toHaveLength(1);
-    expect(server.calls[0].get('form-name')).toBe('use-case');
-    expect(server.calls[0].get('displayName')).toBe('Maximiliana Alexandrina Konstantinopoulou-Vanderbilt');
-    expect(server.calls[0].get('curriculumVersion')).toBe('3.1');
+    expect(server.form('use-case')).toHaveLength(1);
+    const sent = server.form('use-case')[0];
+    expect(sent.get('displayName')).toBe('Maximiliana Alexandrina Konstantinopoulou-Vanderbilt');
+    expect(sent.get('xHandle')).toBe('Not provided');
+    expect(sent.get('participantId')).toBe(saved().participantId);
+    expect(sent.get('curriculumVersion')).toBe('3.1');
+    expect(saved().useCase.submission.participantId).toBe(saved().participantId);
     for (const control of ['Download certificate — PDF', 'Download certificate — PNG', 'Share achievement on X']) {
       expect(screen.getByRole('button', { name: control })).toBeInTheDocument();
     }
@@ -203,7 +336,13 @@ describe('cases', () => {
     // Reloading keeps the certificate without another submission.
     reload('/certificate');
     expect(screen.getByRole('heading', { name: 'Quest complete. You’ve earned your certificate.' })).toBeInTheDocument();
-    expect(server.fetchMock).toHaveBeenCalledTimes(1);
+    expect(server.form('use-case')).toHaveLength(1);
+    // The entry form (queued while offline earlier in this test) and the name correction reach the organiser, linked by one participant ID.
+    await waitFor(() => expect(saved().outbox).toEqual([]));
+    expect(server.form('registration').map((c) => [c.get('registrationType'), c.get('displayName'), c.get('participantId')])).toEqual([
+      ['New participant', 'Maximiliana Alexandrina Konstantinopoulou-Vanderbilt', saved().participantId],
+      ['Updated certificate name or X handle', 'Max K.', saved().participantId],
+    ]);
     reload('/summary');
     expect(screen.getByRole('link', { name: 'View my certificate' })).toBeInTheDocument();
   }, 30000);

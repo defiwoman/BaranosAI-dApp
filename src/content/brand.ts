@@ -11,6 +11,10 @@ export const REQUIREMENTS_NOTE =
 
 export const FINAL_STEP_NOTE = 'One final step: submit your own use case to earn your certificate.';
 
+/** Shown under the entry form (before registering) and in the footer. Matches what src/adapters/submission.ts sends. */
+export const PRIVACY_NOTE =
+  'Your progress is saved in this browser. When you register or submit a case study, your name, optional X handle and submitted answers are shared privately with the quest organiser.';
+
 export const SUBMISSION_NOTICE =
   'Submitting sends your certificate name, your X handle if you gave one, and your use case to the quest organiser. They’re kept privately by the organiser and never published.';
 

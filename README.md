@@ -10,34 +10,63 @@ Live review deployment: https://baranosaieducationalquest.netlify.app/
 
 ## How it works
 
-- **Entry form:** a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet.
+- **Entry form:** a certificate name (required; any script, up to 60 characters) and an optional X handle. No email, password or wallet. Saving it also sends a registration to the quest organiser in the background (see *Organiser notifications*); the quest never waits for it. The note under the form, repeated in the footer, says so before the participant registers: “Your progress is saved in this browser. When you register or submit a case study, your name, optional X handle and submitted answers are shared privately with the quest organiser.” Returning visits send nothing; a participant who registered before notifications existed is identified by the name and X handle in their case study.
 - **Six cases:** each has a short scenario, one task, one challenge with unlimited retries and an optional hint, then *Why this matters*, *How BaranosAI helps* and *Your takeaway*, plus an optional *Explore further* section and source links.
 - **Final review (Case 06):** three questions on reproducibility, settlement and the limits of verified results.
 - **Your use case (final requirement):** after Case 06, one short page ("Your idea for verifiable AI") with three questions: *Name your idea*, *Who would it help, and what would the AI do?*, *Why does verification matter?*. It reuses the saved certificate name and X handle, autosaves the draft, and applies basic completeness checks (no scoring or approval). Submitting sends it to the quest organiser via Netlify Forms.
 - **Certificate:** unlocked only when all six cases are complete **and** a use case has been received. A single rule, `certificateEligibility` in `src/domain/progress.ts`, is used by the progress page, the reward screen and every download. The certificate is drawn once on a canvas and offered as PNG and as a one-page PDF (the same image). Sharing on X is optional, with an editable post. It is a browser-generated learning reward, not a tamper-proof credential.
-- **Saved data:** profile, progress, use-case draft and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, schema version 4 (curriculum 3.1). Drafts from the earlier five-step form are folded into the three fields without losing text (problem + AI task; verification + agreed rules + limitations, as separate paragraphs), and the original draft is kept as a backup. Older saves migrate in place and keep their completed cases. A certificate earned under curriculum 2 (six cases only) is kept and still downloadable; its owner is asked only for the use case to earn the updated certificate.
+- **Saved data:** profile, participant ID, unsent registrations, progress, use-case draft and completion date are stored in `localStorage` under the original key `baranos-lab:progress`, schema version 5 (curriculum 3.1). Version 4 saves migrate in place; an existing profile receives its participant ID once, at that moment. Drafts from the earlier five-step form are folded into the three fields without losing text (problem + AI task; verification + agreed rules + limitations, as separate paragraphs), and the original draft is kept as a backup. Older saves migrate in place and keep their completed cases. A certificate earned under curriculum 2 (six cases only) is kept and still downloadable; its owner is asked only for the use case to earn the updated certificate.
 
-## Enabling use-case submissions on Netlify
+## Organiser notifications (Netlify Forms)
 
-Submissions use [Netlify Forms](https://docs.netlify.com/forms/setup/). The repository already contains everything the code needs:
+Submissions use [Netlify Forms](https://docs.netlify.com/forms/setup/), the service the app already used. There is no custom backend, API key or email provider.
 
-- `public/__forms.html` holds the static form declaration (`name="use-case"`, `data-netlify="true"`, honeypot `bot-field`, `action="/use-case-received.html"`). Its field names match `FORM_FIELDS` in `src/adapters/submission.ts`, and a test enforces this.
-- The app posts URL-encoded data, including `form-name=use-case`, to `/__forms.html`.
-- `public/use-case-received.html` is the form's action page. The app unlocks the certificate only when the response is that page (it carries a marker), so a bare `200 OK` from a server that didn't store anything is not trusted.
+### Which forms send a notification
 
-**You must do this once in the Netlify UI:** *Site configuration → Forms → Enable form detection*, then trigger a new deploy. Afterwards the **use-case** form should appear under *Forms*.
+| Form (Netlify name) | Sent when | Email subject |
+| --- | --- | --- |
+| **registration** | The entry form is saved: a new participant, a returning participant with earlier progress, or a later *Edit certificate name* / *Correct the name* that changes the name or X handle. An unchanged save sends nothing. | `[BaranosAI Quest] Registration: <name> (<@handle or Not provided>)`, or `… Profile update: …` |
+| **use-case** | The final case study is submitted. | `[BaranosAI Quest] Case study: “<idea title>” by <name> (<@handle or Not provided>)` |
 
-**If submitting shows "Use-case submissions aren’t switched on for this site yet"** (Netlify returned 404): the code's POST target, encoding and static declaration match Netlify's documented setup for JavaScript-rendered forms. So a 404 means Netlify did not register the form for that deploy. Check, in order:
+On a deploy preview or branch deploy the prefix becomes `[BaranosAI Quest · Deploy preview]` (or `· Branch deploy`). Nothing is sent on keystrokes, draft autosaves, page visits, case answers or reloads.
+
+Every submission carries: `formType`, `displayName`, `xHandle` (`@handle` or `Not provided`), `participantId`, `submissionId`, `submittedAt` (UTC), `environment` and `siteHost`. The use case adds `title`, `whoAndWhat`, `whyVerify` and `curriculumVersion`; the registration adds `registrationType`. `readableSubmission` repeats everything as one plain-text block with readable labels, and the answers appear in full with their line breaks, so a single case-study email is complete without matching it to the registration.
+
+### How it links participants
+
+- A random participant ID (UUID) is created when the entry form is first saved, never derived from the name. Name edits and *Reset progress* keep it. Existing profiles get one when their save migrates to version 5.
+- Each registration is a snapshot taken when the button was pressed, so a later name change never rewrites an earlier record.
+- The use case sends the current name, X handle and the same participant ID.
+
+### Reliability
+
+- **Stored first:** the app treats a submission as stored only when Netlify answers with that form's own confirmation page (`/registration-received.html` or `/use-case-received.html`, each with a marker). A 404, a generic SPA page or a bare `200` is not trusted.
+- **Registrations** go into an outbox in `localStorage` and are removed only after that confirmation. Failures are retried after 15 s, 1 min and 5 min, whenever the browser comes back online, and on the next visit, always with the same submission ID. The quest never waits for them.
+- **Use case:** unchanged behaviour. The button is disabled while sending, retries reuse the submission ID, the draft is kept on failure, and the certificate unlocks only after the confirmed store. Email delivery happens after storage, so a slow email never blocks the certificate.
+- **Duplicates:** if a response is lost after Netlify stored it, the retry can create a second record with the **same** submission ID. Use that ID to spot duplicates. Two open tabs could also each send the same queued registration.
+- The recipient address lives only in Netlify's notification settings, never in the code or the browser.
+
+### Setup in the Netlify dashboard (one time)
+
+1. *Site configuration → Forms → Form detection*: enable it if it is not already on.
+2. Deploy this branch (or merge it and let production build). After the deploy, *Forms* should list **registration** and **use-case**. The existing **use-case** form keeps its name and history.
+3. *Site configuration → Notifications → Emails and webhooks → Form submission notifications → Add notification → Email notification*. Event: *New form submission*. Email: the organiser's address. Form: **registration**. Save.
+4. Repeat step 3 for the **use-case** form (or choose *Any form* once).
+5. Submit a test registration and a test case study on the deployed site. Check that both appear under *Forms* and that the emails arrive; check spam the first time.
+
+Notes: submissions Netlify flags as spam are stored under *Spam submissions* and do not trigger emails. Netlify's plans include a monthly submission allowance. Netlify builds its own email from the submitted fields; the `subject` field sets its subject line.
+
+### If submitting shows "Use-case submissions aren’t switched on for this site yet"
+
+Netlify returned 404 or a page without the confirmation marker, meaning it did not register the form for that deploy. Check, in order:
 
 1. Form detection is enabled for the site.
 2. The deploy you're testing was built *after* detection was enabled (re-run the deploy or push a commit).
-3. *Forms* lists **use-case** as an active form (a deleted form returns 404 for good; recreate it by redeploying).
+3. *Forms* lists the form as active (a deleted form returns 404 for good; recreate it by redeploying).
 
-The **use-case** form now declares `title`, `whoAndWhat` and `whyVerify` in place of the earlier five-step fields. It keeps the same form name, so existing submissions stay in the same form's history.
+Registrations fail the same way silently and stay queued in the participant's browser until the forms are active.
 
-To verify on the deployed site, submit one use case from a test profile. Check that it appears in the Netlify Forms dashboard and that the certificate unlocks. If detection is off, the app shows "didn’t confirm it saved your use case" and the certificate stays locked.
-
-Submissions are visible only to site members in the Netlify dashboard. Nothing is published. Netlify's free plan includes a limited number of form submissions per month; check your plan. Optional: add form notifications (email or webhook) under *Forms → Form notifications*.
+Submissions are visible only to site members in the Netlify dashboard. Nothing is published.
 
 ## Status
 
@@ -56,7 +85,7 @@ npm run build   # type check (tsc -b) and production build into dist/
 npm run preview # serve dist/ locally
 ```
 
-No environment variables are needed for the simulation.
+No environment variables are needed. During Netlify builds, the non-secret `CONTEXT` value (production, deploy-preview, branch-deploy) is read by `vite.config.ts` to label submissions; locally it is "Local development".
 
 ## Deploying to Netlify
 

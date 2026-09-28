@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
 import { validateProfile, NAME_MAX_LENGTH, type Profile } from '../domain/profile';
+import { PRIVACY_NOTE } from '../content/brand';
 import styles from './ProfileForm.module.css';
 
 interface Props {
@@ -73,7 +74,7 @@ export function ProfileForm({ initial, submitLabel, onSave, onCancel }: Props) {
           </p>
         )}
       </div>
-      <p className={styles.storage}>Your name and progress are saved in this browser so you can return to your quest.</p>
+      <p className={styles.storage}>{PRIVACY_NOTE}</p>
       <div className={styles.actions}>
         <button type="submit" className={styles.primary}>
           {submitLabel}
